@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Daily — Intelligence News Feed</title>
+<style>
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface2: #f0f2f5;
+  --border: #e1e4e8;
+  --border-dark: #d0d4da;
+  --text: #0d1117;
+  --text-muted: #57606a;
+  --text-light: #8b949e;
+  --accent: #0969da;
+  --accent-dark: #0550ae;
+  --red: #cf222e;
+  --orange: #d1242f;
+  --green: #1a7f37;
+  --purple: #8250df;
+  --breaking: #d1242f;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow: 0 4px 16px rgba(0,0,0,0.10);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.13);
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Georgia', serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+}
+
+a { color: inherit; text-decoration: none; }
+a:hover { color: var(--accent); }
+
+/* ── TOP BAR ── */
+.top-bar {
+  background: #0d1117;
+  color: #e6edf3;
+  padding: 6px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.top-bar-left { display: flex; align-items: center; gap: 16px; color: #8b949e; }
+.top-bar-right { display: flex; align-items: center; gap: 12px; color: #8b949e; }
+
+.live-indicator {
+  display: flex; align-items: center; gap: 5px;
+  color: #3fb950; font-weight: 600;
+}
+.live-dot {
+  width: 6px; height: 6px;
+  background: #3fb950; border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.75)} }
+
+/* ── BREAKING TICKER ── */
+.ticker-bar {
+  background: var(--breaking);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  height: 36px;
+}
+
+.ticker-label {
+  background: #8b0000;
+  color: #fff;
+  padding: 0 16px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  white-space: nowrap;
+  height: 100%;
+  display: flex; align-items: center;
+  flex-shrink: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.ticker-track {
+  display: flex;
+  animation: ticker-scroll 55s linear infinite;
+  white-space: nowrap;
+}
+
+.ticker-track:hover { animation-play-state: paused; }
+
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 32px 0 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.ticker-item::before {
+  content: '●';
+  margin-right: 10px;
+  opacity: 0.7;
+  font-size: 8px;
+}
+
+@keyframes ticker-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 3px solid #0d1117;
+  padding: 20px 32px 16px;
+}
+
+.header-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.site-name {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -1.5px;
+  font-family: 'Georgia', serif;
+  line-height: 1;
+}
+
+.site-name span { color: var(--accent); }
+
+.site-tagline {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  margin-top: 3px;
+}
+
+.header-date {
+  text-align: right;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.header-date .day { font-size: 13px; color: var(--text-muted); }
+.header-date .full-date { font-size: 15px; font-weight: 600; }
+
+/* ── NAV ── */
+nav {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+}
+
+.nav-inner {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.nav-link {
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.nav-link:hover { color: var(--text); border-color: var(--border-dark); }
+.nav-link.active { color: var(--text); border-color: var(--accent); }
+
+/* ── MAIN LAYOUT ── */
+.page-wrap {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 28px 32px 48px;
+}
+
+/* ── SECTION HEADERS ── */
+.section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 32px 0 16px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--text);
+}
+
+.section-head:first-child { margin-top: 0; }
+
+.section-head h2 {
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.section-icon { font-size: 18px; }
+
+.section-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 500;
+}
+
+/* ── HERO STORY ── */
+.hero {
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-bottom: 8px;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+}
+
+.hero-body {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.hero-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--breaking);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  margin-bottom: 12px;
+}
+
+.hero-title {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.6px;
+  margin-bottom: 14px;
+  font-family: 'Georgia', serif;
+}
+
+.hero-summary {
+  font-size: 15.5px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.hero-footer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.hero-image {
+  background: linear-gradient(135deg, #0d1117 0%, #1c2128 40%, #1a3a5c 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 90px;
+  padding: 24px;
+}
+
+/* ── NEWS GRID LAYOUTS ── */
+.news-3col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.news-2col {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
+}
+
+.news-4col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.news-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── NEWS CARD ── */
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.card:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+.card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.badge-breaking { background: #ffd7d7; color: #cf222e; }
+.badge-ai       { background: #ddf4ff; color: #0969da; }
+.badge-ccaas    { background: #fff1e5; color: #bc4c00; }
+.badge-bigtech  { background: #f6f0ff; color: #6e40c9; }
+.badge-reg      { background: #fff8c5; color: #9a6700; }
+.badge-tools    { background: #dafbe1; color: #1a7f37; }
+.badge-market   { background: #f0fff4; color: #116329; }
+.badge-research { background: #faf0fe; color: #8250df; }
+.badge-jobs     { background: #ffe4e1; color: #a40a2a; }
+
+.card-time {
+  font-size: 11px;
+  color: var(--text-light);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  white-space: nowrap;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  font-family: 'Georgia', serif;
+  cursor: pointer;
+}
+
+.card-title:hover { color: var(--accent); }
+
+.card-summary {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.card-source {
+  font-size: 11px;
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.card-source::before {
+  content: '📰 ';
+  font-size: 10px;
+}
+
+.read-link {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.read-link:hover { color: var(--accent-dark); }
+
+/* ── HORIZONTAL LIST CARD ── */
+.hcard {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  transition: box-shadow 0.15s;
+}
+.hcard:hover { box-shadow: var(--shadow); }
+
+.hcard-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--border-dark);
+  line-height: 1;
+  flex-shrink: 0;
+  width: 28px;
+  font-family: 'Georgia', serif;
+}
+
+.hcard-body { flex: 1; }
+
+.hcard-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  font-family: 'Georgia', serif;
+  cursor: pointer;
+}
+.hcard-title:hover { color: var(--accent); }
+
+.hcard-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-light);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── STAT STRIP ── */
+.stat-strip {
+  background: #0d1117;
+  border-radius: var(--radius);
+  padding: 16px 24px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin: 24px 0;
+}
+
+.stat-item {
+  text-align: center;
+  color: #e6edf3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.stat-val {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 3px;
+}
+
+.stat-lbl {
+  font-size: 10px;
+  color: #8b949e;
+  line-height: 1.3;
+}
+
+.stat-chg {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.chg-up { color: #3fb950; }
+.chg-dn { color: #f85149; }
+.chg-warn { color: #ffa657; }
+
+.stat-sep {
+  width: 1px;
+  background: #30363d;
+  margin: 4px 0;
+  display: none;
+}
+
+/* ── NEW BADGE ── */
+.new-pill {
+  display: inline-block;
+  background: #ff6b35;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 5px;
+  vertical-align: middle;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  animation: badge-glow 2s ease-in-out infinite;
+}
+
+@keyframes badge-glow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(255,107,53,0.4); }
+  50% { box-shadow: 0 0 0 4px rgba(255,107,53,0); }
+}
+
+/* ── URGENT CARD ── */
+.card.urgent {
+  border-left: 4px solid var(--breaking);
+}
+
+.card.featured {
+  border-left: 4px solid var(--accent);
+}
+
+/* ── DIVIDER ── */
+.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 8px 0;
+}
+
+/* ── OPINION CARD ── */
+.insight-box {
+  background: linear-gradient(135deg, #0d1117 0%, #1c2128 100%);
+  border-radius: var(--radius);
+  padding: 24px;
+  color: #e6edf3;
+}
+
+.insight-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #58a6ff;
+  margin-bottom: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.insight-text {
+  font-size: 16px;
+  font-family: 'Georgia', serif;
+  line-height: 1.6;
+  color: #c9d1d9;
+}
+
+.insight-text strong { color: #fff; }
+
+/* ── MOST READ ── */
+.most-read {
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.most-read-header {
+  background: var(--text);
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.most-read-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.most-read-item:last-child { border-bottom: none; }
+.most-read-item:hover { background: var(--bg); }
+
+.mr-num {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--border-dark);
+  width: 22px;
+  flex-shrink: 0;
+  font-family: 'Georgia', serif;
+}
+
+.mr-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── UPDATED BAR ── */
+.updated-bar {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── FOOTER ── */
+footer {
+  background: #0d1117;
+  color: #8b949e;
+  text-align: center;
+  padding: 20px 32px;
+  font-size: 12px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  border-top: 1px solid #21262d;
+}
+
+footer strong { color: #e6edf3; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 960px) {
+  .news-3col, .news-4col { grid-template-columns: repeat(2,1fr); }
+  .news-2col { grid-template-columns: 1fr; }
+  .hero { grid-template-columns: 1fr; }
+  .hero-image { height: 180px; }
+  .stat-strip { grid-template-columns: repeat(3,1fr); }
+  .page-wrap { padding: 20px 16px; }
+  header, nav, .top-bar { padding-left: 16px; padding-right: 16px; }
+}
+
+@media (max-width: 600px) {
+  .news-3col, .news-4col { grid-template-columns: 1fr; }
+  .stat-strip { grid-template-columns: repeat(2,1fr); }
+  .site-name { font-size: 26px; }
+}
+</style>
+</head>
+<body>
+
+<!-- SWITCH VIEW BAR -->
+<div style="background:#0d1117;border-bottom:1px solid #21262d;padding:6px 32px;display:flex;align-items:center;justify-content:space-between;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;">
+  <div style="display:flex;align-items:center;gap:12px;color:#8b949e;">
+    <span style="color:#58a6ff;font-weight:700;">⬡ AI Intelligence Suite</span>
+    <span>·</span>
+    <span style="color:#3fb950;">● You are on: News Feed</span>
+  </div>
+  <a href="AI_Cockpit.html" style="display:inline-flex;align-items:center;gap:6px;background:#21262d;border:1px solid #30363d;border-radius:6px;padding:4px 12px;color:#e6edf3;text-decoration:none;font-weight:600;font-size:11px;" onmouseover="this.style.background='#30363d'" onmouseout="this.style.background='#21262d'">
+    Switch to 🛸 AI Cockpit Dashboard →
+  </a>
+</div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <div class="live-indicator"><div class="live-dot"></div> LIVE</div>
+    <span id="topDate"></span>
+    <span>AI Intelligence Desk</span>
+  </div>
+  <div class="top-bar-right">
+    <span>Updated: <strong id="updatedAt" style="color:#e6edf3">June 10, 2026</strong></span>
+    <span>·</span>
+    <span>Covers AI · CCaaS · Big Tech · Regulation · Markets</span>
+  </div>
+</div>
+
+<!-- BREAKING NEWS TICKER -->
+<div class="ticker-bar">
+  <div class="ticker-label">BREAKING</div>
+  <div style="overflow:hidden;flex:1">
+    <div class="ticker-track" id="ticker">
+      <span class="ticker-item">Claude Fable 5 launches — Anthropic's first Mythos-class model, most powerful yet</span>
+      <span class="ticker-item">OpenAI files confidential IPO paperwork at $852B valuation</span>
+      <span class="ticker-item">NICE World 2026 concludes today in Orlando — CXone Mpower Agents & Real-Time Memory Engine unveiled</span>
+      <span class="ticker-item">GitHub Copilot switches to token billing June 1 — heavy users report 10–50× cost spikes</span>
+      <span class="ticker-item">Gemini 3.1 Ultra launches with 2M token context and live code execution</span>
+      <span class="ticker-item">Colorado AI Act takes effect June 30 — 20 days for employers to comply</span>
+      <span class="ticker-item">Microsoft MAI-Thinking-1: first in-house reasoning model, 35B params, 256K context</span>
+      <span class="ticker-item">LM Studio 0.4.16 ships iPhone app — run your Mac's AI models on your phone</span>
+      <span class="ticker-item">GPT-5.5 released — 52% fewer hallucinations, leads Terminal-Bench 2.0 at 82.7%</span>
+      <span class="ticker-item">NVIDIA Nemotron 3 Ultra: 550B params, most capable US open-weights model</span>
+      <!-- duplicate for seamless loop -->
+      <span class="ticker-item">Claude Fable 5 launches — Anthropic's first Mythos-class model, most powerful yet</span>
+      <span class="ticker-item">OpenAI files confidential IPO paperwork at $852B valuation</span>
+      <span class="ticker-item">NICE World 2026 concludes today in Orlando — CXone Mpower Agents & Real-Time Memory Engine unveiled</span>
+      <span class="ticker-item">GitHub Copilot switches to token billing June 1 — heavy users report 10–50× cost spikes</span>
+      <span class="ticker-item">Gemini 3.1 Ultra launches with 2M token context and live code execution</span>
+      <span class="ticker-item">Colorado AI Act takes effect June 30 — 20 days for employers to comply</span>
+      <span class="ticker-item">Microsoft MAI-Thinking-1: first in-house reasoning model, 35B params, 256K context</span>
+      <span class="ticker-item">LM Studio 0.4.16 ships iPhone app — run your Mac's AI models on your phone</span>
+      <span class="ticker-item">GPT-5.5 released — 52% fewer hallucinations, leads Terminal-Bench 2.0 at 82.7%</span>
+      <span class="ticker-item">NVIDIA Nemotron 3 Ultra: 550B params, most capable US open-weights model</span>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="site-name">AI <span>Daily</span></div>
+      <div class="site-tagline">Artificial Intelligence · Contact Center · Big Tech · Regulation · Markets</div>
+    </div>
+    <div class="header-date">
+      <div class="day" id="headerDay"></div>
+      <div class="full-date" id="headerDate"></div>
+    </div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-link active" onclick="scrollTo('#breaking')">🔴 Breaking</div>
+    <div class="nav-link" onclick="scrollTo('#ai-models')">🧠 AI Models</div>
+    <div class="nav-link" onclick="scrollTo('#ccaas')">📡 CCaaS</div>
+    <div class="nav-link" onclick="scrollTo('#bigtech')">🏢 Big Tech</div>
+    <div class="nav-link" onclick="scrollTo('#regulation')">⚠️ Regulation</div>
+    <div class="nav-link" onclick="scrollTo('#tools')">🛠️ Tools</div>
+    <div class="nav-link" onclick="scrollTo('#markets')">📈 Markets</div>
+    <div class="nav-link" onclick="scrollTo('#research')">🎓 Research</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="page-wrap">
+
+  <div class="updated-bar">
+    🔄 Page auto-refreshes daily at 8 AM · Content sourced from live web searches · Last updated: <strong>June 10, 2026</strong>
+  </div>
+
+  <!-- HERO -->
+  <div id="breaking">
+    <div class="section-head">
+      <span class="section-icon">🔴</span>
+      <h2>BREAKING NEWS</h2>
+      <span class="section-count">Today's top story</span>
+    </div>
+
+    <div class="hero">
+      <div class="hero-body">
+        <div>
+          <div class="hero-category">🔴 Breaking · AI Models</div>
+          <div class="hero-title">Claude Fable 5 Arrives: Anthropic's Mythos-Class Model Signals a New Era of Autonomous AI — While Filing for IPO at $965B Valuation</div>
+          <div class="hero-summary">Anthropic launched Claude Fable 5 today — the company's most capable model and the first of its newly named "Mythos" class, a tier above Opus designed for sustained, multi-day autonomous reasoning across complex enterprise workflows. The launch comes simultaneous with Anthropic's confidential IPO filing at a staggering $965 billion valuation — surpassing OpenAI's $852B — and a revenue run rate that crossed $47 billion in May 2026, up nearly 5× in just twelve months. Google's cumulative investment now stands at $40B for a 14% stake, while Claude is simultaneously available as a first-party model in Azure AI Foundry, giving Anthropic the rare distinction of deep partnerships with both cloud giants.</div>
+        </div>
+        <div class="hero-footer">
+          <span class="cat-badge badge-breaking">BREAKING</span>
+          <span class="cat-badge badge-ai">AI MODEL</span>
+          <span style="font-size:12px;color:var(--text-muted);font-family:sans-serif">June 10, 2026 · Anthropic Newsroom</span>
+          <a class="read-link" href="https://www.anthropic.com/news" target="_blank" style="margin-left:auto">Full Story ↗</a>
+        </div>
+      </div>
+      <div class="hero-image">🤖</div>
+    </div>
+
+    <!-- 3 breaking cards -->
+    <div class="news-3col" style="margin-top:16px">
+      <div class="card urgent">
+        <div class="card-top">
+          <span class="cat-badge badge-breaking">BREAKING</span>
+          <span class="card-time">Today</span>
+        </div>
+        <div class="card-title">OpenAI Files Confidential IPO Paperwork at $852B Valuation <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">OpenAI joined Anthropic and SpaceX in filing for a US IPO, with a reported post-money valuation of $852 billion. Simultaneously, GPT-5.5 launched with 52.5% fewer hallucinations than its predecessor and a Terminal-Bench 2.0 score of 82.7% — OpenAI's most capable base model yet.</div>
+        <div class="card-bottom">
+          <span class="card-source">Yahoo Finance</span>
+          <a class="read-link" href="https://finance.yahoo.com/sectors/technology/live/tech-stocks-today-openai-joins-anthropic-spacex-in-filing-ipo-paperwork" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card urgent">
+        <div class="card-top">
+          <span class="cat-badge badge-breaking">BREAKING</span>
+          <span class="card-time">Today</span>
+        </div>
+        <div class="card-title">NICE World 2026 Closes — CXone Mpower Agents & Real-Time Memory Engine Launched <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">NICE's flagship annual conference concluded today in Orlando (June 8–10) with the launch of CXone Mpower Agents featuring a Real-Time Memory Engine that retains customer context across sessions. NICE also announced the CX AI Benchmark Program — enabling enterprises to measure AI agent performance against validated industry KPIs.</div>
+        <div class="card-bottom">
+          <span class="card-source">Business Wire</span>
+          <a class="read-link" href="https://www.businesswire.com/news/home/20260601278108/en/NiCE-World-2026" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card urgent">
+        <div class="card-top">
+          <span class="cat-badge badge-breaking">BREAKING</span>
+          <span class="card-time">June 1, 2026</span>
+        </div>
+        <div class="card-title">GitHub Copilot Token Billing Shock: Developers Report 10–50× Cost Spikes <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Microsoft switched GitHub Copilot to token-based billing on June 1. Base plan prices remain, but premium AI features now consume "AI Credits" per token. Heavy users report overnight bills 10–50× higher than expected — already dubbed the "enterprise AI pricing wake-up call of 2026."</div>
+        <div class="card-bottom">
+          <span class="card-source">Medium / Developers Digest</span>
+          <a class="read-link" href="https://medium.com/@jordanvale/your-ai-tool-just-got-50x-more-expensive-overnight-29b718e8f246" target="_blank">Read ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKET STATS STRIP -->
+  <div class="stat-strip">
+    <div class="stat-item">
+      <div class="stat-val" style="color:#58a6ff">$965B</div>
+      <div class="stat-lbl">Anthropic Valuation</div>
+      <div class="stat-chg chg-up">↑ IPO Filed</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:#3fb950">$47B</div>
+      <div class="stat-lbl">Anthropic ARR</div>
+      <div class="stat-chg chg-up">↑ 5× in 12 months</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:#ffa657">$852B</div>
+      <div class="stat-lbl">OpenAI Valuation</div>
+      <div class="stat-chg chg-up">↑ IPO Filed</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:#f85149">113K+</div>
+      <div class="stat-lbl">Tech Job Losses 2026</div>
+      <div class="stat-chg chg-dn">↑ 33% vs 2025</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-val" style="color:#ffa657">Jun 30</div>
+      <div class="stat-lbl">Colorado AI Act</div>
+      <div class="stat-chg chg-warn">⚠ 20 days away</div>
+    </div>
+  </div>
+
+  <!-- AI MODELS -->
+  <div id="ai-models">
+    <div class="section-head">
+      <span class="section-icon">🧠</span>
+      <h2>AI MODELS & RESEARCH</h2>
+      <span class="section-count">Latest releases · Benchmarks · Open-source</span>
+    </div>
+
+    <div class="news-3col">
+      <div class="card featured">
+        <div class="card-top">
+          <span class="cat-badge badge-ai">GOOGLE AI</span>
+          <span class="card-time">June 10, 2026</span>
+        </div>
+        <div class="card-title">Gemini 3.1 Ultra Launches — 2M Token Context, Live Code Execution Built-In <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Google launched Gemini 3.1 Ultra with a 2-million token context window — natively multimodal across text, image, audio, and video — plus a sandboxed Code Execution tool that lets the model write, run, and test code mid-conversation without leaving the chat.</div>
+        <div class="card-bottom">
+          <span class="card-source">CNBC / Google AI</span>
+          <a class="read-link" href="https://ai.google.dev" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-ai">MICROSOFT</span>
+          <span class="card-time">June 3, 2026</span>
+        </div>
+        <div class="card-title">MAI-Thinking-1: Microsoft's First Reasoning Model Ships — 35B Params, 256K Context <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Microsoft released its first proprietary reasoning model: MAI-Thinking-1, a 35B active-parameter model with 256K context, built for complex multi-step instructions and code generation. Alongside: MAI-Code-1-Flash converts written text directly into source code.</div>
+        <div class="card-bottom">
+          <span class="card-source">Euronews / CNBC</span>
+          <a class="read-link" href="https://www.cnbc.com/2026/06/02/microsoft-unveils-new-ai-models-lessen-reliance-on-openai-lower-costs.html" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-ai">OPEN SOURCE</span>
+          <span class="card-time">June 4, 2026</span>
+        </div>
+        <div class="card-title">NVIDIA Nemotron 3 Ultra (550B Params) — Most Capable US Open-Weights Model Yet</div>
+        <div class="card-summary">NVIDIA launched Nemotron 3 Ultra at Computex — a 550B parameter Mixture-of-Experts model (55B active) that shipped June 4. It tops US open-weight benchmarks, challenging Chinese models DeepSeek V3 and Qwen3 for open-source supremacy.</div>
+        <div class="card-bottom">
+          <span class="card-source">LLM Stats / NVIDIA</span>
+          <a class="read-link" href="https://llm-stats.com/llm-updates" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-ai">GOOGLE OPEN</span>
+          <span class="card-time">June 3, 2026</span>
+        </div>
+        <div class="card-title">Gemma 4 12B Drops — Beats Last Year's Gemma 3 27B on MMLU Pro <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Google's Gemma 4 12B released June 3, scoring 77.2% on MMLU Pro — outperforming the previous generation's 27B model in a fraction of the size. A significant efficiency leap for local deployment scenarios.</div>
+        <div class="card-bottom">
+          <span class="card-source">HuggingFace / AI Updates</span>
+          <a class="read-link" href="https://ai.google.dev/gemma" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-ai">MINIMAX</span>
+          <span class="card-time">June 2026</span>
+        </div>
+        <div class="card-title">MiniMax M3: First Open-Weight Model with Frontier Coding, 1M Context & Native Multimodality</div>
+        <div class="card-summary">MiniMax M3 tops the open-weight SWE-Bench Pro at 59.0% — the first open model to combine frontier-level coding ability, 1M token context window, and native multimodal support in a single release.</div>
+        <div class="card-bottom">
+          <span class="card-source">HuggingFace / MiniMax</span>
+          <a class="read-link" href="https://huggingface.co/MiniMaxAI" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-ai">APPLE</span>
+          <span class="card-time">June 8, 2026</span>
+        </div>
+        <div class="card-title">Apple WWDC: Siri Completely Rebuilt on Apple Intelligence — Onscreen Awareness, World Knowledge <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Apple unveiled a ground-up rebuilt Siri at WWDC — now powered by Apple Intelligence with onscreen awareness, personal context understanding, and broad world knowledge. Directly challenges Google Assistant and Amazon Alexa in the personal AI assistant race.</div>
+        <div class="card-bottom">
+          <span class="card-source">CNBC / Apple</span>
+          <a class="read-link" href="https://www.apple.com/newsroom" target="_blank">Read ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CCAAS -->
+  <div id="ccaas">
+    <div class="section-head">
+      <span class="section-icon">📡</span>
+      <h2>CCAAS & CONTACT CENTER</h2>
+      <span class="section-count">Cisco · NICE · Genesys · Five9 · Avaya</span>
+    </div>
+
+    <div class="news-2col">
+      <div class="news-feed">
+        <div class="card featured">
+          <div class="card-top">
+            <span class="cat-badge badge-ccaas">NICE CX</span>
+            <span class="card-time">Today — Just Concluded</span>
+          </div>
+          <div class="card-title">NICE World 2026 Wrap: CXone Mpower Agents Ship with Real-Time Memory Engine <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+          <div class="card-summary">NICE World 2026 (June 8–10, Orlando) concluded with transformative announcements: CXone Mpower Agents now include a Real-Time Memory Engine that retains customer context across sessions — eliminating the frustrating "please verify yourself again" loop. The CX AI Benchmark Program lets enterprises measure AI agent performance against validated industry KPIs, not vendor-supplied metrics. 6,000+ attendees witnessed NICE confirm: AI is not a bolt-on to CXone — it IS CXone.</div>
+          <div class="card-bottom">
+            <span class="card-source">Business Wire</span>
+            <a class="read-link" href="https://www.businesswire.com/news/home/20260601278108/en/NiCE-World-2026" target="_blank">Read ↗</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-top">
+            <span class="cat-badge badge-ccaas">CISCO</span>
+            <span class="card-time">Cisco Live 2026</span>
+          </div>
+          <div class="card-title">Cisco Unveils AI WEM, AI Concierge & Agent 360 — The "AI-Native Contact Center Era" Begins</div>
+          <div class="card-summary">Three new AI-native products from Cisco Live 2026: AI WEM (autonomous workforce management), AI Concierge (real-time agent co-pilot), and Agent 360 (unified human + AI agent performance dashboard). Cisco stock surged 15% on AI orders, with CEO declaring a "networking supercycle."</div>
+          <div class="card-bottom">
+            <span class="card-source">CX Today</span>
+            <a class="read-link" href="https://www.cxtoday.com/contact-center/cisco-ai-contact-center-cisco-live-2026/" target="_blank">Read ↗</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-top">
+            <span class="cat-badge badge-ccaas">GENESYS</span>
+            <span class="card-time">FY2026 Results</span>
+          </div>
+          <div class="card-title">Genesys First CCaaS to Hit $2.6B ARR — Launches Industry-First LAM-Based Agentic Agents</div>
+          <div class="card-summary">Genesys closed FY2026 with ~$3B total revenue (+13% YoY) and became the first CCaaS vendor to cross $2.5B cloud ARR. More significantly: it launched agentic virtual agents built on Large Action Models (LAMs) — not text-generation LLMs, but action-execution models that navigate systems, retrieve live data, and complete transactions end-to-end.</div>
+          <div class="card-bottom">
+            <span class="card-source">Genesys Newsroom</span>
+            <a class="read-link" href="https://www.genesys.com/company/newsroom" target="_blank">Read ↗</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="news-feed">
+        <div class="most-read">
+          <div class="most-read-header">📊 CCaaS AT A GLANCE</div>
+          <div class="most-read-item">
+            <div class="mr-num">01</div>
+            <div>
+              <div class="mr-title">NICE AI ARR: $345M (+66% YoY) — in 100% of enterprise deals</div>
+              <div style="font-size:11px;color:var(--text-light);font-family:sans-serif;margin-top:3px">Q1 2026 Earnings</div>
+            </div>
+          </div>
+          <div class="most-read-item">
+            <div class="mr-num">02</div>
+            <div>
+              <div class="mr-title">Genesys Cloud ARR: $2.6B (+35% YoY) — 70% of customers using AI</div>
+              <div style="font-size:11px;color:var(--text-light);font-family:sans-serif;margin-top:3px">FY2026 Earnings</div>
+            </div>
+          </div>
+          <div class="most-read-item">
+            <div class="mr-num">03</div>
+            <div>
+              <div class="mr-title">Only 25% of contact centres have fully operationalised AI features</div>
+              <div style="font-size:11px;color:var(--text-light);font-family:sans-serif;margin-top:3px">CCaaS Market Guide 2026</div>
+            </div>
+          </div>
+          <div class="most-read-item">
+            <div class="mr-num">04</div>
+            <div>
+              <div class="mr-title">Five9 Genius AI: bundled into Enterprise tier, new CEO Amit Mathradas</div>
+              <div style="font-size:11px;color:var(--text-light);font-family:sans-serif;margin-top:3px">Five9 Announcement</div>
+            </div>
+          </div>
+          <div class="most-read-item">
+            <div class="mr-num">05</div>
+            <div>
+              <div class="mr-title">Avaya 200-seat rule triggers industry-wide migration race to cloud</div>
+              <div style="font-size:11px;color:var(--text-light);font-family:sans-serif;margin-top:3px">CX Today Analysis</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-box" style="margin-top:16px">
+          <div class="insight-label">📌 Analyst View</div>
+          <div class="insight-text">"The CCaaS market has shifted from a <strong>platform migration story</strong> to an <strong>AI-native transformation play</strong>. Vendors not shipping agentic AI in Q3 2026 will be defending, not growing."</div>
+          <div style="font-size:11px;color:#8b949e;margin-top:10px;font-family:sans-serif">— Futurum Research, Enterprise Connect 2026</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BIG TECH -->
+  <div id="bigtech">
+    <div class="section-head">
+      <span class="section-icon">🏢</span>
+      <h2>BIG TECH & AI ORGS</h2>
+      <span class="section-count">Anthropic · OpenAI · Google · Microsoft · NVIDIA</span>
+    </div>
+
+    <div class="news-3col">
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-bigtech">ANTHROPIC</span>
+          <span class="card-time">June 10, 2026</span>
+        </div>
+        <div class="card-title">$47B ARR, $965B Valuation, IPO Filed — Anthropic Is Now the World's Most Valuable AI Company <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">With Claude Fable 5 shipping today, Anthropic's annualized revenue hit $47B — up from $10B a year ago. Google ($40B invested, 14% stake) and Microsoft (first-party Azure Foundry) are both deeply embedded. The $965B valuation surpasses OpenAI's $852B, making Anthropic the most valuable private AI company on the planet.</div>
+        <div class="card-bottom">
+          <span class="card-source">Anthropic / Yahoo Finance</span>
+          <a class="read-link" href="https://www.anthropic.com/news" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-bigtech">MICROSOFT</span>
+          <span class="card-time">June 2026 — Build</span>
+        </div>
+        <div class="card-title">Project Polaris Replaces OpenAI in Copilot; Microsoft Becomes an AI Model Builder</div>
+        <div class="card-summary">At Build 2026, Microsoft announced Project Polaris (its own coding AI, replacing GPT-4 in Copilot by August) and MAI-Thinking-1. Together these mark Microsoft's shift from AI model consumer to model builder. Azure AI Foundry now hosts Claude, DeepSeek, Llama, Mistral alongside OpenAI — a multi-model marketplace strategy.</div>
+        <div class="card-bottom">
+          <span class="card-source">CNBC / Euronews</span>
+          <a class="read-link" href="https://www.cnbc.com/2026/06/01/microsoft-and-google-take-on-anthropic-and-openai-in-ai-coding-models.html" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-bigtech">NVIDIA</span>
+          <span class="card-time">FY2026</span>
+        </div>
+        <div class="card-title">NVIDIA Revenue Hits $215.9B — CEO Jensen Huang Signals "Last Major AI Lab Investments"</div>
+        <div class="card-summary">NVIDIA's FY2026 revenue reached $215.9B (from $26.9B in 2022 — an 8× surge in 4 years). Data Center at $60.4B (+77% YoY). Jensen Huang announced NVIDIA's $30B OpenAI and $10B Anthropic investments will "probably be the last" in frontier labs — preferring infrastructure dominance over equity stakes.</div>
+        <div class="card-bottom">
+          <span class="card-source">NVIDIA / CNBC</span>
+          <a class="read-link" href="https://tech-insider.org/nvidia-openai-anthropic-investment-pullback-2026/" target="_blank">Read ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGULATION & JOBS -->
+  <div id="regulation">
+    <div class="section-head">
+      <span class="section-icon">⚠️</span>
+      <h2>REGULATION & WORKFORCE</h2>
+      <span class="section-count">Policy · Job losses · Compliance deadlines</span>
+    </div>
+
+    <div class="news-4col">
+      <div class="card urgent">
+        <div class="card-top">
+          <span class="cat-badge badge-reg">DEADLINE</span>
+          <span class="card-time">20 days</span>
+        </div>
+        <div class="card-title">Colorado AI Act Compliance Required by June 30 — Most Companies Unprepared <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Colorado's AI Act — the most comprehensive US state AI employment law — takes effect in 20 days. Employers using AI in hiring, performance review, or termination must demonstrate "reasonable care" against algorithmic discrimination. Legal experts warn most companies are not compliant.</div>
+        <div class="card-bottom">
+          <span class="card-source">Foley / KS&amp;L</span>
+          <a class="read-link" href="https://www.kslaw.com/news-and-insights/new-state-ai-laws-are-effective-on-january-1-2026" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card urgent">
+        <div class="card-top">
+          <span class="cat-badge badge-jobs">JOB LOSSES</span>
+          <span class="card-time">Through May 2026</span>
+        </div>
+        <div class="card-title">113,000+ Tech Jobs Gone in 2026 — 825 Per Day, No Federal Disclosure Law</div>
+        <div class="card-summary">American tech companies have cut 113,000+ jobs in 2026 through May 18 — up 33% vs the same period in 2025 — with no federal law requiring companies to disclose when AI was the cause. Customer service reps, junior devs, and content moderators top the displacement list.</div>
+        <div class="card-bottom">
+          <span class="card-source">Tech Times</span>
+          <a class="read-link" href="https://www.techtimes.com/articles/316802/20260518/tech-layoffs-surpass-113000-2026" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-reg">US SENATE</span>
+          <span class="card-time">2026</span>
+        </div>
+        <div class="card-title">Bipartisan Bill Would Force Companies to Disclose AI-Driven Layoffs</div>
+        <div class="card-summary">Senators Warner and Hawley introduced the AI-Related Job Impacts Clarity Act — requiring companies to disclose layoffs attributable to AI. 72% of Americans support public reporting. Trump's executive order preempting state AI regulation is now facing challenges from 26 states with enacted laws.</div>
+        <div class="card-bottom">
+          <span class="card-source">Economic Policy Institute</span>
+          <a class="read-link" href="https://www.epi.org/publication/federal-ai-legislation/" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-jobs">WARNING</span>
+          <span class="card-time">Feb 2026</span>
+        </div>
+        <div class="card-title">"Global Jobs Collapse by 2027 If Unchecked" — Former Google Ethicist Tristan Harris</div>
+        <div class="card-summary">Tristan Harris warns agentic AI could trigger cascading job displacement by 2027 — replacing entire job categories simultaneously rather than incrementally. He calls for mandatory "AI deployment impact assessments" similar to environmental impact statements before mass-scale AI rollouts.</div>
+        <div class="card-bottom">
+          <span class="card-source">Fortune</span>
+          <a class="read-link" href="https://fortune.com/2026/02/10/ai-taking-jobs-report-tristan-harris-google-ethicist-agi-technology/" target="_blank">Read ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLS -->
+  <div id="tools">
+    <div class="section-head">
+      <span class="section-icon">🛠️</span>
+      <h2>AI TOOLS & PRODUCTS</h2>
+      <span class="section-count">New launches · Pricing changes · Platform updates</span>
+    </div>
+
+    <div class="news-3col">
+      <div class="card featured">
+        <div class="card-top">
+          <span class="cat-badge badge-tools">NEW TOOL</span>
+          <span class="card-time">June 1, 2026</span>
+        </div>
+        <div class="card-title">ZoomMate Launches at $20/mo — Live Meeting AI Connected to Salesforce, Jira & ServiceNow <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Zoom introduced ZoomMate on June 1, 2026 — an AI meeting assistant that integrates directly into live meetings and connects decisions to Salesforce, Jira, ServiceNow, and Slack in real time. At $20/user/month, it competes directly with Microsoft Copilot for Meetings.</div>
+        <div class="card-bottom">
+          <span class="card-source">CNBC / Zoom</span>
+          <a class="read-link" href="https://www.zoom.com/en/products/ai-companion/" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-tools">OPEN SOURCE</span>
+          <span class="card-time">June 4, 2026</span>
+        </div>
+        <div class="card-title">LM Studio 0.4.16 Ships "Locally" iPhone App — Run Mac AI Models on Your Phone <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">LM Studio 0.4.16 ships with Locally for iPhone/iPad and LM Link — a remote-access layer connecting your phone to models running on your Mac over an encrypted Tailscale mesh. Chat history stays on each device; only device discovery touches LM Studio's servers.</div>
+        <div class="card-bottom">
+          <span class="card-source">Digital Applied / LM Studio</span>
+          <a class="read-link" href="https://lmstudio.ai" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card urgent">
+        <div class="card-top">
+          <span class="cat-badge badge-tools">PRICING ALERT</span>
+          <span class="card-time">June 1, 2026</span>
+        </div>
+        <div class="card-title">Windsurf Pro Raises to $20/mo (from $15); Gemini 2.0 Flash Deprecated June 1 <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Windsurf's Pro plan increased from $15 to $20/mo in May 2026, adding a new Max tier at $200/mo for power users. Separately, Google deprecated Gemini 2.0 Flash on June 1 — developers on the old API must migrate to avoid service disruption. Average AI software prices down 15% since 2024 overall, but premium tiers rising fast.</div>
+        <div class="card-bottom">
+          <span class="card-source">UX Collective / AI Pricing 2026</span>
+          <a class="read-link" href="https://thecrunch.io/ai-software-price/" target="_blank">Read ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARKETS -->
+  <div id="markets">
+    <div class="section-head">
+      <span class="section-icon">📈</span>
+      <h2>MARKET & INVESTMENT</h2>
+      <span class="section-count">Valuations · Funding · Revenue</span>
+    </div>
+
+    <div class="news-feed">
+      <div class="hcard">
+        <div class="hcard-num">01</div>
+        <div class="hcard-body">
+          <div class="hcard-title">Hyperscalers on track to spend $675B on AI infrastructure in 2026 — up 63% YoY (IBM Analysis) <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+          <div class="hcard-meta">
+            <span class="cat-badge badge-market">MARKET</span>
+            <span>IBM Think · June 2026</span>
+            <a class="read-link" href="https://www.ibm.com/think/insights/ai-roi" target="_blank">Read ↗</a>
+          </div>
+        </div>
+      </div>
+      <div class="hcard">
+        <div class="hcard-num">02</div>
+        <div class="hcard-body">
+          <div class="hcard-title">Google Cloud Q1 2026: $20B revenue (+63% YoY) — AI is now the growth engine, not the future</div>
+          <div class="hcard-meta">
+            <span class="cat-badge badge-market">MARKET</span>
+            <span>Google / AOL Finance · 2026</span>
+            <a class="read-link" href="https://www.aol.com/articles/anthropic-just-delivered-great-news-022000000.html" target="_blank">Read ↗</a>
+          </div>
+        </div>
+      </div>
+      <div class="hcard">
+        <div class="hcard-num">03</div>
+        <div class="hcard-body">
+          <div class="hcard-title">Average enterprise AI spend hits $11.6M in 2026 (+65% YoY) — but only 5% achieve meaningful ROI</div>
+          <div class="hcard-meta">
+            <span class="cat-badge badge-market">ROI</span>
+            <span>Master of Code / Bain · June 2026</span>
+            <a class="read-link" href="https://masterofcode.com/blog/ai-roi" target="_blank">Read ↗</a>
+          </div>
+        </div>
+      </div>
+      <div class="hcard">
+        <div class="hcard-num">04</div>
+        <div class="hcard-body">
+          <div class="hcard-title">NVIDIA stock projects $358B in FY2027 revenue — Data Center networking grew 199% YoY in FY2026</div>
+          <div class="hcard-meta">
+            <span class="cat-badge badge-market">MARKET</span>
+            <span>NVIDIA Earnings · FY2026</span>
+            <a class="read-link" href="https://tech-insider.org/nvidia-openai-anthropic-investment-pullback-2026/" target="_blank">Read ↗</a>
+          </div>
+        </div>
+      </div>
+      <div class="hcard">
+        <div class="hcard-num">05</div>
+        <div class="hcard-body">
+          <div class="hcard-title">Bain June 2026: "The Technology Worked. The Value Didn't Arrive." — 40% of firms saw &lt;10% cost reduction</div>
+          <div class="hcard-meta">
+            <span class="cat-badge badge-market">ANALYSIS</span>
+            <span>Bain &amp; Company · June 1, 2026</span>
+            <a class="read-link" href="https://www.bloomberg.com/news/newsletters/2026-06-01/bain-survey-ai-delivers-less-cost-reduction-than-many-firms-predicted" target="_blank">Read ↗</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESEARCH -->
+  <div id="research">
+    <div class="section-head">
+      <span class="section-icon">🎓</span>
+      <h2>RESEARCH & THINK TANKS</h2>
+      <span class="section-count">Stanford · WEF · Brookings · Deloitte</span>
+    </div>
+
+    <div class="news-3col">
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-research">STANFORD HAI</span>
+          <span class="card-time">April 2026</span>
+        </div>
+        <div class="card-title">Stanford AI Index 2026: Entry-Level Software Dev Jobs Down 20%; GenAI Worth $172B Annually to US Consumers</div>
+        <div class="card-summary">Stanford HAI's 400-page 2026 AI Index finds employment for software developers aged 22–25 has fallen nearly 20% from 2024. But generative AI tools now deliver $172 billion annually in estimated value to US consumers. Productivity gains: 14–15% in customer support, 26% in software dev, 73% in marketing output.</div>
+        <div class="card-bottom">
+          <span class="card-source">Stanford HAI</span>
+          <a class="read-link" href="https://hai.stanford.edu/ai-index/2026-ai-index-report" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-research">WEF</span>
+          <span class="card-time">2026</span>
+        </div>
+        <div class="card-title">WEF Future of Jobs 2026: 170M New Roles Created, 92M Displaced — But the Workers Don't Match</div>
+        <div class="card-summary">Net positive of 78M jobs — but WEF's critical finding is that the workers losing roles are not the ones filling new ones. More than half the global workforce needs reskilling within 4 years. Corporate training investment is not keeping pace with displacement speed.</div>
+        <div class="card-bottom">
+          <span class="card-source">World Economic Forum</span>
+          <a class="read-link" href="https://www.weforum.org/stories/2026/05/why-the-next-decade-of-physical-ai-must-be-human-centric/" target="_blank">Read ↗</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-top">
+          <span class="cat-badge badge-research">DELOITTE</span>
+          <span class="card-time">Q2 2026</span>
+        </div>
+        <div class="card-title">Deloitte Q2 GenAI Report: Worker AI Access Up 50%, But Only 34% Are Reimagining the Business <span class="new-pill" data-added="2026-06-10">NEW</span></div>
+        <div class="card-summary">Deloitte's Q2 2026 State of GenAI in the Enterprise shows worker AI access rose 50% in a year, with 2× more leaders reporting transformative impact. Yet only 34% are truly reimagining business models — the rest are optimizing existing processes. Companies with 40%+ AI projects in production will double within 6 months.</div>
+        <div class="card-bottom">
+          <span class="card-source">Deloitte US</span>
+          <a class="read-link" href="https://www.deloitte.com/us/en/what-we-do/capabilities/applied-artificial-intelligence/content/state-of-ai-in-the-enterprise.html" target="_blank">Read ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end page-wrap -->
+
+<footer>
+  <strong>AI Daily</strong> — Autonomous intelligence news feed · Updated daily at 8 AM ·
+  Content sourced via live web search · <strong>June 10, 2026</strong> ·
+  Part of the AI Cockpit suite
+</footer>
+
+<script>
+  // Date display
+  const now = new Date();
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const shortOpts = { weekday: 'short', month: 'short', day: 'numeric' };
+  const el = document.getElementById('topDate');
+  if (el) el.textContent = now.toLocaleDateString('en-US', shortOpts);
+  const hd = document.getElementById('headerDay');
+  if (hd) hd.textContent = now.toLocaleDateString('en-US', { weekday: 'long' });
+  const hDate = document.getElementById('headerDate');
+  if (hDate) hDate.textContent = now.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  // Nav scroll highlight
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', function() {
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  function scrollTo(id) {
+    const el = document.querySelector(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Auto-expire NEW pills
+  const TODAY = new Date().toISOString().slice(0,10);
+  document.querySelectorAll('.new-pill[data-added]').forEach(el => {
+    const added = new Date(el.dataset.added);
+    const ageDays = (Date.now() - added) / 86400000;
+    if (ageDays >= 1) el.remove();
+  });
+</script>
+
+</body>
+</html>
