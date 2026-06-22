@@ -1,1 +1,1652 @@
-PCFET0NUWVBFIGh0bWw+CjxodG1sIGxhbmc9ImVuIj4KPGhlYW
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Cockpit — Daily Intelligence Dashboard</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent2: #3fb950;
+    --accent3: #f78166;
+    --accent4: #d2a8ff;
+    --accent5: #ffa657;
+    --accent6: #56d364;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --tag-bg: #21262d;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+
+  .header-left { display: flex; align-items: center; gap: 16px; }
+
+  .logo {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, #58a6ff, #d2a8ff);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  .header-title { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; }
+  .header-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+  .header-right { display: flex; align-items: center; gap: 12px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(63,185,80,0.15);
+    border: 1px solid rgba(63,185,80,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--accent2);
+    font-weight: 600;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--accent2);
+    border-radius: 50%;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .date-badge {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 4px 10px;
+  }
+
+  /* ── TABS ── */
+  .tabs-wrapper {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .tab {
+    padding: 14px 18px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+  .tab-icon { font-size: 15px; }
+  .tab-count {
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 10px;
+    padding: 1px 6px;
+    font-weight: 600;
+  }
+
+  /* ── MAIN ── */
+  main { max-width: 1400px; margin: 0 auto; padding: 28px 32px; }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+
+  .section-title {
+    font-size: 18px; font-weight: 700;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .section-pill {
+    font-size: 11px; font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: rgba(88,166,255,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(88,166,255,0.25);
+  }
+
+  .updated-at {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* ── CARDS GRID ── */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 16px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .card.cisco::before { background: linear-gradient(90deg, #049fd9, #00bceb); }
+  .card.nice::before { background: linear-gradient(90deg, #00a0e3, #005eb8); }
+  .card.genesys::before { background: linear-gradient(90deg, #ff4f1f, #ff8c42); }
+  .card.five9::before { background: linear-gradient(90deg, #e31837, #ff6b6b); }
+  .card.avaya::before { background: linear-gradient(90deg, #da291c, #ff6b47); }
+  .card.mckinsey::before { background: linear-gradient(90deg, #003087, #0066cc); }
+  .card.deloitte::before { background: linear-gradient(90deg, #86bc25, #43b02a); }
+  .card.pwc::before { background: linear-gradient(90deg, #d04a02, #eb6f20); }
+  .card.accenture::before { background: linear-gradient(90deg, #a100ff, #cc44ff); }
+  .card.ey::before { background: linear-gradient(90deg, #ffe600, #ffcc00); }
+  .card.roi::before { background: linear-gradient(90deg, #58a6ff, #79c0ff); }
+  .card.warning::before { background: linear-gradient(90deg, #f78166, #ff9580); }
+  .card.stanford::before { background: linear-gradient(90deg, #8c1515, #b83232); }
+  .card.wef::before { background: linear-gradient(90deg, #009edb, #00c6ff); }
+  .card.brookings::before { background: linear-gradient(90deg, #1b4f72, #2980b9); }
+  .card.openai::before { background: linear-gradient(90deg, #10a37f, #1abc9c); }
+  .card.anthropic::before { background: linear-gradient(90deg, #c9785e, #e8967a); }
+  .card.google::before { background: linear-gradient(90deg, #4285f4, #34a853); }
+  .card.microsoft::before { background: linear-gradient(90deg, #00a4ef, #7fba00); }
+  .card.nvidia::before { background: linear-gradient(90deg, #76b900, #a8d800); }
+  .card.gov::before { background: linear-gradient(90deg, #6e40c9, #9b59b6); }
+  .card.jobs::before { background: linear-gradient(90deg, #f78166, #ff9580); }
+  .card.concern::before { background: linear-gradient(90deg, #d29922, #f0ad4e); }
+  .card.meta::before { background: linear-gradient(90deg, #0866ff, #33a4ff); }
+
+  .card-vendor {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .vendor-logo {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .vendor-name { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; }
+  .vendor-category { font-size: 11px; color: var(--text-muted); }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 10px;
+    color: var(--text);
+  }
+
+  .card-body {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.65;
+    margin-bottom: 14px;
+  }
+
+  .card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 8px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .tag.green { color: var(--accent2); border-color: rgba(63,185,80,0.3); background: rgba(63,185,80,0.1); }
+  .tag.blue { color: var(--accent); border-color: rgba(88,166,255,0.3); background: rgba(88,166,255,0.1); }
+  .tag.orange { color: var(--accent5); border-color: rgba(255,166,87,0.3); background: rgba(255,166,87,0.1); }
+  .tag.red { color: var(--accent3); border-color: rgba(247,129,102,0.3); background: rgba(247,129,102,0.1); }
+  .tag.purple { color: var(--accent4); border-color: rgba(210,168,255,0.3); background: rgba(210,168,255,0.1); }
+
+  .read-link {
+    font-size: 11px;
+    color: var(--accent);
+    text-decoration: none;
+    display: flex; align-items: center; gap: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+
+  .read-link:hover { opacity: 0.7; }
+
+  /* ── STAT CARDS ── */
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-value { font-size: 26px; font-weight: 700; }
+  .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .stat-change { font-size: 11px; margin-top: 6px; font-weight: 600; }
+  .stat-change.up { color: var(--accent2); }
+  .stat-change.down { color: var(--accent3); }
+
+  /* ── DIVIDERS ── */
+  .vendor-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vendor-group-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── NEW BADGES ── */
+  .new-badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(63,185,80,0.18);
+    color: var(--accent2);
+    border: 1px solid rgba(63,185,80,0.4);
+    letter-spacing: 0.5px;
+    margin-left: 7px;
+    vertical-align: middle;
+    text-transform: uppercase;
+  }
+
+  .new-sup {
+    display: inline-block;
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(63,185,80,0.18);
+    color: var(--accent2);
+    border: 1px solid rgba(63,185,80,0.4);
+    letter-spacing: 0.5px;
+    margin-left: 4px;
+    vertical-align: super;
+    text-transform: uppercase;
+  }
+
+  /* ── AI TOOLS TAB ── */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .tool-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .tool-item:hover { border-color: var(--accent); }
+
+  .tool-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .tool-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .tool-pop { font-size: 14px; }
+
+  .tool-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .tool-price {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 7px;
+    font-weight: 600;
+  }
+
+  .tool-status {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+  }
+
+  .tool-status.green {
+    color: var(--accent2);
+    background: rgba(63,185,80,0.1);
+    border: 1px solid rgba(63,185,80,0.3);
+  }
+
+  .tool-status.orange {
+    color: var(--accent5);
+    background: rgba(255,166,87,0.1);
+    border: 1px solid rgba(255,166,87,0.3);
+  }
+
+  .tool-status.blue {
+    color: var(--accent);
+    background: rgba(88,166,255,0.1);
+    border: 1px solid rgba(88,166,255,0.3);
+  }
+
+  .tool-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <div class="logo">🧠</div>
+    <div>
+      <div class="header-title">AI Cockpit</div>
+      <div class="header-sub">Daily Intelligence Dashboard · CX & AI Industry</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="date-badge" id="dateDisplay"></div>
+    <div class="live-badge"><div class="live-dot"></div>Live</div>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs-wrapper">
+  <div class="tab active" onclick="showTab('ccaas', this)">
+    <span class="tab-icon">📡</span> CCaaS Vendors <span class="tab-count">12</span>
+  </div>
+  <div class="tab" onclick="showTab('consulting', this)">
+    <span class="tab-icon">📊</span> Consulting Reports <span class="tab-count">5</span>
+  </div>
+  <div class="tab" onclick="showTab('roi', this)">
+    <span class="tab-icon">💰</span> Industry ROI & Value <span class="tab-count">5</span>
+  </div>
+  <div class="tab" onclick="showTab('research', this)">
+    <span class="tab-icon">🎓</span> Academic & Think Tanks <span class="tab-count">4</span>
+  </div>
+  <div class="tab" onclick="showTab('orgs', this)">
+    <span class="tab-icon">🤖</span> Top AI Orgs <span class="tab-count">7</span>
+  </div>
+  <div class="tab" onclick="showTab('concerns', this)">
+    <span class="tab-icon">⚠️</span> Gov & Society <span class="tab-count">6</span>
+  </div>
+  <div class="tab" onclick="showTab('tools', this)">
+    <span class="tab-icon">🛠️</span> AI Tools <span class="tab-count">26</span>
+  </div>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 1: CCaaS VENDORS
+══════════════════════════════════════════════ -->
+<div id="tab-ccaas" class="section active">
+  <div class="section-header">
+    <div class="section-title">📡 CCaaS Vendor AI News <span class="section-pill">June 2026</span></div>
+    <div class="updated-at">Updated: June 22, 2026</div>
+  </div>
+
+  <div class="vendor-group-label">Cisco</div>
+  <div class="cards-grid">
+    <div class="card cisco">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#049fd9;color:#fff">C</div>
+        <div><div class="vendor-name">Cisco</div><div class="vendor-category">Webex Contact Center</div></div>
+      </div>
+      <div class="card-title">CCW Las Vegas 2026 Opens TODAY — Cisco Showcases Full Agentic CX Portfolio <span class="new-badge" data-added="2026-06-22">New</span></div>
+      <div class="card-body">Customer Contact Week (CCW) Las Vegas 2026 opened June 22 with Cisco's full agentic contact center portfolio taking center stage. Cisco's AI Concierge — the pre-configured AI agent that acts as an intelligent front door to Webex CC — dynamically evaluates customer context (intent, sentiment, interaction history) and coordinates behind the scenes across knowledge bases, other AI agents, and enterprise systems. When escalation is needed, AI Concierge performs a context-rich warm transfer to the best-matched human agent. CCW's overarching theme this year: "less hype, more operating discipline" — CX leaders now have the authority and the tools; they have to prove it delivers ROI.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">CCW LIVE NOW</span><span class="tag blue">AI Concierge</span><span class="tag orange">June 22–25</span></div>
+        <a class="read-link" href="https://www.webex.com/us/en/live-events/ccw-2026.html" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card cisco">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#049fd9;color:#fff">C</div>
+        <div><div class="vendor-name">Cisco</div><div class="vendor-category">Contact Center AI</div></div>
+      </div>
+      <div class="card-title">Cisco Live 2026: "Agentic Workforce" Era Begins — Webex CC Goes GA in India</div>
+      <div class="card-body">At Cisco Live 2026, Cisco declared the AI chatbot era over — and the AI-native contact center era arrived. Three flagship launches: AI WEM (Workforce Engagement Management), AI Concierge for self-service orchestration, and Agent 360 for unified human+AI performance visibility. All target what Cisco calls the "agentic workforce" — a blended environment where human and AI agents are managed, secured, and orchestrated from a single platform. Webex CC also went GA in India (Mumbai data center), targeting data sovereignty compliance in one of the world's largest contact center markets.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">Cisco Live 2026</span><span class="tag orange">Agentic Workforce</span></div>
+        <a class="read-link" href="https://www.cxtoday.com/contact-center/cisco-ai-contact-center-cisco-live-2026/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card cisco">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#049fd9;color:#fff">C</div>
+        <div><div class="vendor-name">Cisco</div><div class="vendor-category">AI Agents</div></div>
+      </div>
+      <div class="card-title">Cisco Translator Agent Breaks Language Barriers — Live at CCW 2026 <span class="new-badge" data-added="2026-06-22">New</span></div>
+      <div class="card-body">Now on the CCW 2026 show floor (June 22–25, Las Vegas): Cisco's Translator Agent powered by EZDubs enables real-time multilingual contact center conversations — agents and customers speak their native languages while AI translates with preserved tone and inflection, eliminating the need for human interpreters. For on-prem customers, the Webex AI Agent is GA for UCCE/PCCE via a new Universal Harness integration layer that deploys AI without requiring full infrastructure overhauls. A new WFM solution set is in controlled availability before October 2026, and a unified human+AI performance monitoring console is GA by end of Q2 2026.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">AI Agents</span><span class="tag green">Multilingual</span><span class="tag orange">CCW LIVE</span></div>
+        <a class="read-link" href="https://www.cxtoday.com/event-news/customer-contact-week-vegas-2026-less-hype-more-operating-discipline/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">NICE CX</div>
+  <div class="cards-grid">
+    <div class="card nice">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#00a0e3;color:#fff">N</div>
+        <div><div class="vendor-name">NICE CX</div><div class="vendor-category">CXone Platform</div></div>
+      </div>
+      <div class="card-title">NICE World 2026: Unified WEM Platform for Human + AI Agents </div>
+      <div class="card-body">NICE announced a unified WEM Platform spanning human and AI agents at NICE World 2026, with consolidated quality management that compares outcomes across human- and AI-led interactions. Cloud ARR hits $2.4B, with AI growing 2X faster than the overall platform.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">ServiceNow Integration</span><span class="tag blue">NiCE World Live</span></div>
+        <a class="read-link" href="https://www.tipranks.com/news/company-announcements/nice-launches-ai-first-servicenow-integration-to-unify-customer-engagement-and-enterprise-workflows" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card nice">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#00a0e3;color:#fff">N</div>
+        <div><div class="vendor-name">NICE CX</div><div class="vendor-category">Product Innovation</div></div>
+      </div>
+      <div class="card-title">Konecta Partnership + "People and AI Becoming One Workforce" Platform Vision</div>
+      <div class="card-body">NICE announced a strategic partnership with Konecta — one of Europe's largest contact center outsourcers — to accelerate deployment of NiCE CXone and NiCE Cognigy agentic AI technology globally. The partnership reflects NICE's core 2026 narrative: not AI replacing humans, but "People and AI Becoming One Workforce" managed from a single platform. NiCE CXone already has AI embedded in 100% of enterprise deals; the Konecta partnership is the distribution play that scales that reach into outsourced CX operations across Latin America and Europe. NICE-ServiceNow and NICE-Epic EHR native integrations extend agentic CX into IT service management and healthcare.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag purple">Partnership</span><span class="tag blue">Outsourced CX</span><span class="tag orange">Healthcare</span></div>
+        <a class="read-link" href="https://www.nice.com/blog/nice-world-shows-power-of-people-and-ai-becoming-one-workforce" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">Genesys</div>
+  <div class="cards-grid">
+    <div class="card genesys">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#ff4f1f;color:#fff">G</div>
+        <div><div class="vendor-name">Genesys</div><div class="vendor-category">Genesys Cloud</div></div>
+      </div>
+      <div class="card-title">Q3 FY2026: Cloud ARR Hits $2.4B — AI Growing 2X Faster Than Platform</div>
+      <div class="card-body">Genesys Cloud reached nearly $2.4B ARR in Q3 FY2026 (30%+ YoY growth), with Genesys Cloud AI ARR growing at more than 2X the rate of the overall platform — and accelerating from the prior quarter. More than 500 customers now exceed $1M in ARR. The numbers confirm a structural shift: AI at Genesys is no longer an add-on upsell but the primary growth engine, driving disproportionate ACV expansion in enterprise deals. New agentic features include expanded language support for Agent Copilot and Agentic Virtual Agent (AVA) covering Filipino, Malay, Hebrew, and Greek — extending AI CX into previously underserved markets.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">ARR $2.4B</span><span class="tag blue">AI 2X Growth</span></div>
+        <a class="read-link" href="https://www.genesys.com/company/newsroom/announcements/strong-enterprise-adoption-of-genesys-cloud-ai-drives-company-momentum-in-the-third-quarter-of-fiscal-year-2026" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card genesys">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#ff4f1f;color:#fff">G</div>
+        <div><div class="vendor-name">Genesys</div><div class="vendor-category">Agentic AI</div></div>
+      </div>
+      <div class="card-title">Governance Gap Study: Businesses Trust Agentic AI — Consumers Absolutely Don't</div>
+      <div class="card-body">A landmark Genesys research study exposed a dangerous trust chasm: 81% of CX leaders trust agentic AI with sensitive customer data, but only 36% of consumers agree. For financial transactions specifically — billing, transfers — 74% of businesses are comfortable with AI, while only 35% of consumers are. The root cause: fewer than 31% of businesses have comprehensive, organization-wide AI governance policies in place. This governance gap is now the defining risk for CCaaS vendors scaling agentic AI in 2026 — regulatory exposure, brand reputation damage, and consumer backlash are all real consequences of deploying AI faster than governance structures can follow.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">Governance Gap</span><span class="tag orange">Consumer Trust</span><span class="tag blue">Agentic Risk</span></div>
+        <a class="read-link" href="https://www.genesys.com/company/newsroom/announcements/genesys-study-finds-agentic-ai-is-advancing-but-governance-gaps-threaten-consumer-trust" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">Genesys Investments</div>
+  <div class="cards-grid">
+    <div class="card genesys">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#ff4f1f;color:#fff">G</div>
+        <div><div class="vendor-name">Genesys</div><div class="vendor-category">Strategic Investment</div></div>
+      </div>
+      <div class="card-title">Salesforce + ServiceNow Invest $1.5B in Genesys — Standalone CCaaS Era Ending </div>
+      <div class="card-body">Salesforce and ServiceNow jointly invested $1.5 billion in Genesys, signaling that the standalone CCaaS era is ending. The deal positions Genesys as the connective tissue between CRM, ITSM, and AI-powered customer engagement platforms — a bet that the future belongs to unified enterprise platforms, not point solutions.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">$1.5B Investment</span><span class="tag blue">Platform Consolidation</span></div>
+        <a class="read-link" href="https://www.cxtoday.com/contact-center/genesys-vs-nice-vs-five9/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card nice">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#00a0e3;color:#fff">N</div>
+        <div><div class="vendor-name">NICE</div><div class="vendor-category">M&A — Conversational AI</div></div>
+      </div>
+      <div class="card-title">NICE Acquires Cognigy for $955M — Largest Conversational AI Buy in CCaaS History </div>
+      <div class="card-body">NICE completed its $955 million acquisition of Cognigy, the German conversational AI company, making it the largest conversational AI acquisition in contact center history. The deal gives NICE native agentic AI orchestration across the entire customer journey, directly challenging Genesys's growing enterprise AI portfolio.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">$955M Acquisition</span><span class="tag blue">Conversational AI</span><span class="tag orange">Agentic</span></div>
+        <a class="read-link" href="https://www.inflectioncx.com/intelligence/guides/ccaas-market-guide-2026" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">Others</div>
+  <div class="cards-grid">
+    <div class="card five9">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#e31837;color:#fff">F</div>
+        <div><div class="vendor-name">Five9</div><div class="vendor-category">Genius AI Suite</div></div>
+      </div>
+      <div class="card-title">Five9 Named CRN AI 100 (Third Year) — Publishes $14.5M ROI, 212% Return Case Study</div>
+      <div class="card-body">Five9 was named to CRN's 2026 AI 100 list in the Software category for the third consecutive year — one of CRN's Top 20 Hottest AI Software Companies. The company's most impactful June 2026 move is publishing a verified ROI case study showing its AI-Elevated CX Platform delivered $14.5M in business value and 212% ROI for a single enterprise customer through automation and growth — one of the most specific, independently verifiable AI ROI figures in the contact center industry. Five9 also integrated Hyro's healthcare-native AI agents, extending its agentic CX reach into one of the highest-compliance verticals.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">CRN AI 100</span><span class="tag green">212% ROI</span><span class="tag orange">Healthcare</span></div>
+        <a class="read-link" href="https://www.five9.com/news/news-releases/five9-ai-elevated-cx-platform-delivered-145m-business-value-and-212-roi-through" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card five9">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#e31837;color:#fff">F</div>
+        <div><div class="vendor-name">Five9</div><div class="vendor-category">Leadership & Partnerships</div></div>
+      </div>
+      <div class="card-title">Five9: New CEO Amit Mathradas + Expanded Google Partnership </div>
+      <div class="card-body">Amit Mathradas became Five9 CEO in February 2026 and expanded the Google Cloud partnership for deeper AI-native integrations. Five9 revenue ~$1.2B ARR; also named CRN AI 100 for the third consecutive year with a verified $14.5M / 212% ROI case study.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">New CEO</span><span class="tag green">Google Partnership</span><span class="tag orange">$1B ARR</span></div>
+        <a class="read-link" href="https://www.cxtoday.com/contact-center/genesys-vs-nice-vs-five9/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card avaya">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#da291c;color:#fff">A</div>
+        <div><div class="vendor-name">Avaya</div><div class="vendor-category">Hybrid Cloud</div></div>
+      </div>
+      <div class="card-title">Avaya's 200-Seat Rule Accelerates Migration Race Across the Market</div>
+      <div class="card-body">Avaya's strategic shift — requiring customers with under 200 seats to migrate off on-premise to cloud — has triggered an industry-wide migration race, accelerating customer moves to competitors including Cisco, Genesys, and NICE. Avaya's own positioning focuses on hybrid, governed AI orchestration spanning on-prem, private-cloud, and public cloud environments — targeting enterprises that can't fully migrate due to regulatory or infrastructure constraints. The company faces intense competition as rivals use the disruption to capture displaced Avaya customers mid-migration.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">Migration</span><span class="tag orange">Hybrid Cloud</span></div>
+        <a class="read-link" href="https://www.cxtoday.com/contact-center/avaya-mitel-contact-center-migration-race/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+    <div class="card avaya">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#6e40c9;color:#fff">B</div>
+        <div><div class="vendor-name">BluIP</div><div class="vendor-category">UCaaS + CCaaS</div></div>
+      </div>
+      <div class="card-title">BluIP + NICE Expand UCaaS+CCaaS Go-to-Market </div>
+      <div class="card-body">BluIP and NICE CXone expanded their go-to-market partnership for an integrated UCaaS+CCaaS solution. The CCaaS market in 2026 is estimated at $7–9B globally (18–21% CAGR), with the narrative having shifted from platform migration to AI-native transformation.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag purple">Partnership</span><span class="tag blue">UCaaS+CCaaS</span></div>
+        <a class="read-link" href="https://www.nice.com/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 2: CONSULTING
+══════════════════════════════════════════════ -->
+<div id="tab-consulting" class="section">
+  <div class="section-header">
+    <div class="section-title">📊 Consulting Group AI Reports <span class="section-pill">Big 4 + McKinsey</span></div>
+    <div class="updated-at">Updated: June 22, 2026</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#58a6ff">$10B+</div>
+      <div class="stat-label">Big 4 + McKinsey AI Investment since 2023</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#3fb950">77K</div>
+      <div class="stat-label">Accenture AI professionals globally</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#d2a8ff">200K</div>
+      <div class="stat-label">PwC ChatPwC internal users</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#ffa657">$3B</div>
+      <div class="stat-label">Accenture AI commitment over 3 years</div>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card mckinsey">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#003087;color:#fff">M</div>
+        <div><div class="vendor-name">McKinsey</div><div class="vendor-category">QuantumBlack AI Research</div></div>
+      </div>
+      <div class="card-title">McKinsey State of Organizations 2026: AI as Support Tool — US AI Consulting Market Hits $15B </div>
+      <div class="card-body">McKinsey's State of Organizations 2026 (n=10,018 leaders surveyed June–Sept 2025) finds respondents expect AI to act mainly as a support tool in the near term, with younger leaders notably more optimistic about autonomous AI roles. The US AI consulting market is projected to exceed $15 billion in 2026, with McKinsey, Accenture, and Deloitte dominating AI transformation engagements.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">$15B Consulting Market</span><span class="tag green">10,018 Leaders Surveyed</span></div>
+        <a class="read-link" href="https://www.mckinsey.com/~/media/mckinsey/business%20functions/people%20and%20organizational%20performance/our%20insights/the%20state%20of%20organizations/2026/the-state-of-organizations-2026.pdf" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card deloitte">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#86bc25;color:#fff">D</div>
+        <div><div class="vendor-name">Deloitte</div><div class="vendor-category">Quarterly GenAI Report</div></div>
+      </div>
+      <div class="card-title">Deloitte State of AI 2026: "From Ambition to Activation" — Only 34% Truly Reimagining Business </div>
+      <div class="card-body">Deloitte's State of AI 2026 ("From Ambition to Activation") surveyed 3,235 business and IT leaders across 24 countries. Only 34% are truly reimagining their business with AI — most are optimizing existing processes. Worker access to AI tools rose 50% in 2025, and companies with 40%+ of projects in production are set to double within six months.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">3,235 Leaders · 24 Countries</span><span class="tag orange">34% Reimagining</span></div>
+        <a class="read-link" href="https://www.deloitte.com/us/en/about/press-room/state-of-ai-report-2026.html" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card pwc">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#d04a02;color:#fff">P</div>
+        <div><div class="vendor-name">PwC</div><div class="vendor-category">AI Jobs Barometer</div></div>
+      </div>
+      <div class="card-title">PwC 2026 AI Predictions: 60% Say Responsible AI Boosts ROI, 55% See CX Improvement</div>
+      <div class="card-body">PwC's 2026 AI Business Predictions report finds 60% of executives say responsible AI directly boosts ROI and efficiency — and 55% report improved customer experience and innovation as a direct AI outcome. This is the clearest data yet that the "responsible AI" narrative is no longer just compliance theater: it's a business value driver. PwC has deployed ChatPwC internally to 200,000 professionals and is embedding AI into every client delivery pathway (audit, deals, tax, advisory). The firm's AI Jobs Barometer across 28 economies shows AI-exposed roles delivering 25-30% higher productivity gains, but those gains skew toward senior workers — raising equity concerns that regulators are increasingly scrutinizing.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">ROI Confirmed</span><span class="tag blue">Responsible AI</span></div>
+        <a class="read-link" href="https://www.pwc.com/us/en/tech-effect/ai-analytics/ai-predictions.html" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card accenture">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#a100ff;color:#fff">A</div>
+        <div><div class="vendor-name">Accenture</div><div class="vendor-category">AI Refinery Platform</div></div>
+      </div>
+      <div class="card-title">Accenture: Use AI or Get Passed Over — Promotions Now Tied to Weekly AI Tool Logins</div>
+      <div class="card-body">After training 550,000 workers in AI tools in 2025, Accenture is raising the stakes: senior managers and associate directors who don't consistently use AI tools will be passed over for promotion, with the company monitoring weekly AI tool logins to assess engagement. This is the consulting industry's most aggressive move yet to force AI adoption from the top of the organization down. KPMG followed suit — grading employees on AI tool use as part of 2026 annual performance reviews, with bosses assessing how well staffers achieve KPMG's AI goals. Together, the Big 4 are making AI proficiency a core career competency rather than a bonus skill.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">AI Mandatory</span><span class="tag blue">Promotions</span><span class="tag orange">550K Trained</span></div>
+        <a class="read-link" href="https://fortune.com/2026/02/23/last-year-accenture-trained-550000-staff-use-ai-now-promotions-hinge-on-putting-that-into-practice/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card ey">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#333;color:#ffe600">EY</div>
+        <div><div class="vendor-name">EY + KPMG</div><div class="vendor-category">AI Market Positioning</div></div>
+      </div>
+      <div class="card-title">Big 4 + Strategy Firms Invest $10B+ in AI Since 2023</div>
+      <div class="card-body">Accenture committed $3B with ~77,000 AI professionals. McKinsey named Leader in Forrester Wave: CX Strategy Consulting Q4 2024. Deloitte publishes quarterly State of GenAI in the Enterprise reports.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">Recession-Proof AI</span><span class="tag purple">Super-Agents</span></div>
+        <a class="read-link" href="https://futureofconsulting.ai/ai-leadership/2026-consultings-ai-revolution-update/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 3: ROI & VALUE
+══════════════════════════════════════════════ -->
+<div id="tab-roi" class="section">
+  <div class="section-header">
+    <div class="section-title">💰 Industry ROI, Benefits & Failures <span class="section-pill">2026 Reports</span></div>
+    <div class="updated-at">Updated: June 22, 2026</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f78166">95%</div>
+      <div class="stat-label">AI pilots with zero measurable P&L impact</div>
+      <div class="stat-change down">↓ Crisis Level</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f78166">42%</div>
+      <div class="stat-label">Companies that abandoned AI projects in 2025</div>
+      <div class="stat-change down">↑ Rising</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#3fb950">58%</div>
+      <div class="stat-label">Fully integrated AI firms reporting revenue growth</div>
+      <div class="stat-change up">↑ vs 15% for pilots</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#58a6ff">$675B</div>
+      <div class="stat-label">AI infrastructure spend by hyperscalers in 2026</div>
+      <div class="stat-change up">↑ 63% YoY</div>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card roi">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#58a6ff;color:#fff">📈</div>
+        <div><div class="vendor-name">CIO.com</div><div class="vendor-category">ROI Analysis</div></div>
+      </div>
+      <div class="card-title">2026: The Year AI ROI Gets Real — or Gets Cut</div>
+      <div class="card-body">A landmark analysis by CIO.com declares 2026 the inflection year where boards stop funding AI on faith and demand proven returns. Organizations with fully integrated AI are nearly 4x more likely to report revenue growth than those still in pilot mode (58% vs 15%). The report identifies three foundational layers that separate AI winners from losers: measurement infrastructure that proves whether AI tasks are working, workflow integration that automates multi-step outcomes, and a learning loop that continuously improves model performance using operational feedback — not just training data.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">Success Patterns</span><span class="tag blue">Leadership</span></div>
+        <a class="read-link" href="https://www.cio.com/article/4114010/2026-the-year-ai-roi-gets-real.html" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card warning">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#f78166;color:#fff">⚡</div>
+        <div><div class="vendor-name">Bain &amp; Co.</div><div class="vendor-category">Failure Analysis</div></div>
+      </div>
+      <div class="card-title">Bain: AI Budgets Are a "Circular Bet" on Returns That Haven't Arrived</div>
+      <div class="card-body">Bain & Co.'s June 1, 2026 Bloomberg-covered survey of 951 companies ($100M+ revenue) found a damning gap: 37% expected AI cost reductions of 10-20%, but 40% saw improvements of 10% or less, and only 4% achieved savings above 30%. Most alarmingly, 44% of large companies are funding their next AI wave based on savings from the last round — savings that haven't materialized yet. Bain's verdict: "The technology worked. The value didn't arrive." The No. 1 root cause identified is that companies cannot reliably access their own data, making AI's potential unreachable regardless of model quality.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">Circular Bet</span><span class="tag orange">Data Access Barrier</span></div>
+        <a class="read-link" href="https://www.bloomberg.com/news/articles/2026-06-01/bain-finds-corporate-ai-investments-based-on-returns-that-haven-t-arrived" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card roi">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#0062cc;color:#fff">G</div>
+        <div><div class="vendor-name">Gartner</div><div class="vendor-category">AI I&amp;O ROI Report — April 2026</div></div>
+      </div>
+      <div class="card-title">Gartner: Only 28% of AI Infrastructure Projects Fully Deliver ROI — 20% Fail Outright</div>
+      <div class="card-body">A Gartner survey of 782 I&amp;O leaders (Nov–Dec 2025) found only 28% of AI use cases in infrastructure and operations fully succeed and meet ROI expectations — while 20% fail outright. The No. 1 cause of failure: expecting too much, too fast. 57% of leaders who reported failure said they assumed AI would immediately automate complex tasks or fix long-standing operational issues. Worldwide AI spending is projected at $2.5 trillion in 2026 (Gartner), yet Gartner puts AI firmly in the "Trough of Disillusionment" — predicting that AI will increasingly be sold by incumbent vendors rather than bought as new moonshot projects until ROI predictability improves.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">28% Success Rate</span><span class="tag orange">$2.5T Spend</span></div>
+        <a class="read-link" href="https://www.gartner.com/en/newsroom/press-releases/2026-04-07-gartner-says-artificial-intelligence-projects-in-infrastructure-and-operations-stall-ahead-of-meaningful-roi-returns" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card warning">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#f78166;color:#fff">⚡</div>
+        <div><div class="vendor-name">KPMG</div><div class="vendor-category">Enterprise AI Disconnect Report 2026</div></div>
+      </div>
+      <div class="card-title">$665B AI Spend, 73% Failure Rate — Enterprise AI ROI Crisis Deepens in 2026 </div>
+      <div class="card-body">Global enterprise AI spending hits $665 billion in 2026, yet 73% of deployments fail to achieve projected ROI. MIT found 95% of AI pilots deliver zero measurable P&L impact; S&P Global found 42% of companies abandoned most of their AI projects in 2025. Organizations that measure outcomes before deploying AI are 4x more likely to achieve ROI than those that deploy first.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">73% Failure Rate</span><span class="tag orange">$665B Spend</span><span class="tag blue">4x ROI Advantage</span></div>
+        <a class="read-link" href="https://www.aigovernancetoday.com/news/enterprise-ai-spending-crisis-2026" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card roi">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#0062cc;color:#fff">IBM</div>
+        <div><div class="vendor-name">IBM</div><div class="vendor-category">AI ROI Framework</div></div>
+      </div>
+      <div class="card-title">$675B AI Infrastructure Spend in 2026 — Up 63% YoY </div>
+      <div class="card-body">Hyperscalers are on track to spend $675B on AI infrastructure in 2026, up 63% from 2025. Despite the massive spend, Gartner finds only 28% of AI infrastructure projects fully deliver ROI and 20% fail outright. Bain's circular bet analysis warns most companies fund the next AI wave on savings that haven't materialized from the last round.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">Framework</span><span class="tag green">Infrastructure</span></div>
+        <a class="read-link" href="https://masterofcode.com/blog/ai-roi" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 4: ACADEMIC & THINK TANKS
+══════════════════════════════════════════════ -->
+<div id="tab-research" class="section">
+  <div class="section-header">
+    <div class="section-title">🎓 Academic & Think Tank AI Reports <span class="section-pill">Stanford · WEF · Brookings</span></div>
+    <div class="updated-at">Updated: June 22, 2026</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#3fb950">170M</div>
+      <div class="stat-label">New jobs AI will create by 2030 (WEF)</div>
+      <div class="stat-change up">↑ Net positive</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f78166">92M</div>
+      <div class="stat-label">Jobs displaced by AI by 2030 (WEF)</div>
+      <div class="stat-change down">↓ Disruption</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#ffa657">~20%</div>
+      <div class="stat-label">Decline in software dev employment ages 22–25 (Stanford HAI 2026)</div>
+      <div class="stat-change down">↓ Early Career Impact</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#58a6ff">50%+</div>
+      <div class="stat-label">Global workforce needing reskilling by 2030</div>
+      <div class="stat-change orange">⚠ Urgent</div>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card stanford">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#8c1515;color:#fff">S</div>
+        <div><div class="vendor-name">Stanford HAI</div><div class="vendor-category">AI Index Report 2026</div></div>
+      </div>
+      <div class="card-title">Stanford HAI 2026 AI Index Report — 9th Annual, 400+ Pages </div>
+      <div class="card-body">Stanford HAI 2026 AI Index (9th edition, 400+ pages): Generative AI now used in at least one business function at 70% of organizations globally. Corporate AI investment doubled in 2025 to $581.7 billion. AI-related skills now appear in 2.5% of all US job postings — a 297% increase over the past decade. AI talent flow into the United States has dropped 89% since 2017, with an 80% decline in just the last year.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">AI Talent -89%</span><span class="tag green">$581.7B Corporate AI Investment</span></div>
+        <a class="read-link" href="https://hai.stanford.edu/ai-index/2026-ai-index-report" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card wef">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#009edb;color:#fff">W</div>
+        <div><div class="vendor-name">World Economic Forum</div><div class="vendor-category">Future of Jobs 2026</div></div>
+      </div>
+      <div class="card-title">WEF Future of Jobs Report 2026: 170M New Roles, 92M Displaced</div>
+      <div class="card-body">AI will create ~170 million new roles globally by 2030 while displacing ~92 million existing ones. Net gain but massive reskilling required across all sectors.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">+78M Net Jobs</span><span class="tag orange">Reskilling Gap</span></div>
+        <a class="read-link" href="https://www.weforum.org/stories/2026/05/why-the-next-decade-of-physical-ai-must-be-human-centric/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card brookings">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#1b4f72;color:#fff">B</div>
+        <div><div class="vendor-name">Brookings Institution</div><div class="vendor-category">AI Policy Research</div></div>
+      </div>
+      <div class="card-title">Brookings: Closing the Data Gap for AI Policy — What We Still Don't Know</div>
+      <div class="card-body">Brookings' AI and Emerging Technology Initiative held a landmark April 2026 event with Stanford HAI to examine the data gap in AI policymaking. The core finding: governments are making consequential decisions about AI regulation with insufficient data on actual economic impacts, specifically lacking granular data on which workers, regions, and sectors are most exposed. Brookings argues for a national AI impact data infrastructure — mandatory corporate reporting on AI-related workforce changes, similar to how environmental impact must be disclosed — to enable evidence-based rather than fear-based regulation. Without this data, policy risks either over-regulating beneficial AI or under-regulating genuinely harmful displacement.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag purple">Policy</span><span class="tag blue">Data Gap</span></div>
+        <a class="read-link" href="https://www.brookings.edu/events/data-gap-ai-policy-stanford-ai-index/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card wef">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#009edb;color:#fff">W</div>
+        <div><div class="vendor-name">WEF + IDC</div><div class="vendor-category">Human-AI Collaboration</div></div>
+      </div>
+      <div class="card-title">Work Rewired: Human-AI Collaboration Is the Real Competitive Moat</div>
+      <div class="card-body">A joint WEF-IDC 2026 report, "Work Rewired: Navigating the Human-AI Collaboration Wave," argues that the question of "AI vs. Human" is a false frame — the real competitive advantage lies in how effectively organizations design human-AI collaboration models, not in how aggressively they automate. Companies scoring highest on IDC's "AI Collaboration Maturity Index" show that hybrid human-AI teams consistently outperform fully automated workflows on complex, judgment-intensive tasks by 30-40%. The report identifies three collaboration archetypes: AI as tool (human leads), AI as colleague (shared decision-making), and AI as supervisor (AI directs, human executes) — each suited to different task types and risk profiles.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">Collaboration</span><span class="tag blue">Maturity Index</span></div>
+        <a class="read-link" href="https://www.idc.com/resource-center/blog/work-rewired-navigating-the-human-ai-collaboration-wave/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 5: TOP AI ORGS
+══════════════════════════════════════════════ -->
+<div id="tab-orgs" class="section">
+  <div class="section-header">
+    <div class="section-title">🤖 Top AI Organizations <span class="section-pill">Investments · Stocks · News</span></div>
+    <div class="updated-at">Updated: June 22, 2026</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#76b900">$358B</div>
+      <div class="stat-label">NVIDIA projected 2026 revenue</div>
+      <div class="stat-change up">↑ 66% YoY</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#10a37f">$965B</div>
+      <div class="stat-label">Anthropic IPO valuation (filed June 1)</div>
+      <div class="stat-change up">↑ #1 AI startup</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#ffa657">$675B</div>
+      <div class="stat-label">Hyperscaler AI infra spend 2026</div>
+      <div class="stat-change up">↑ 63% YoY</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#d2a8ff">$2.5B</div>
+      <div class="stat-label">Claude Code ARR (Anthropic)</div>
+      <div class="stat-change up">↑ Fastest growing</div>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card nvidia">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#76b900;color:#fff">N</div>
+        <div><div class="vendor-name">NVIDIA</div><div class="vendor-category">Chips & Infrastructure</div></div>
+      </div>
+      <div class="card-title">NVIDIA Revenue Hits $215B → $358B Projected; Jensen Says "Last Major AI Investments"</div>
+      <div class="card-body">NVIDIA's full-year FY2026 revenue reached $215.9B (up from $26.9B in 2022 — a staggering 8x in four years), with Data Center compute at a record $60.4B (+77% YoY) and networking revenue at $14.8B (+199% YoY). FY2027 revenue is projected at $358B+. In a seismic Silicon Valley moment, CEO Jensen Huang announced in March 2026 that NVIDIA's investments in OpenAI and Anthropic ($30B and $10B respectively) would "probably be the last" in consequential frontier AI companies — signaling NVIDIA sees its future in infrastructure dominance rather than model-lab equity stakes.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">Revenue +8x (4yr)</span><span class="tag blue">Infrastructure</span></div>
+        <a class="read-link" href="https://tech-insider.org/nvidia-openai-anthropic-investment-pullback-2026/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card anthropic">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#c9785e;color:#fff">A</div>
+        <div><div class="vendor-name">Anthropic</div><div class="vendor-category">Claude AI</div></div>
+      </div>
+      <div class="card-title">Anthropic: $965B Valuation, $65B Series H, Confidential IPO Filed </div>
+      <div class="card-body">Anthropic closed a $65B Series H at a $965B valuation — surpassing OpenAI and making it the world's most valuable AI startup. Filed confidentially for IPO and signed a landmark deal with SpaceX for 300 megawatts of compute at $1.25B/month through May 2029. Microsoft and NVIDIA together invested $15B.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">$965B IPO</span><span class="tag red">Pentagon Battle</span><span class="tag purple">Project Glasswing</span></div>
+        <a class="read-link" href="https://finance.yahoo.com/news/live/tech-stocks-today-anthropic-says-pentagon-ban-could-cost-it-billions-meta-announces-new-ai-chips-134456659.html" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card openai">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#10a37f;color:#fff">O</div>
+        <div><div class="vendor-name">OpenAI</div><div class="vendor-category">GPT-5.5 Launch</div></div>
+      </div>
+      <div class="card-title">OpenAI Releases GPT-5.5 — Major Gains in Agentic Coding, Computer Use & Science </div>
+      <div class="card-body">OpenAI released GPT-5.5, its most capable model to date, with major gains in agentic coding, computer use, knowledge work, and scientific research. Separately, OpenAI closed a $110 billion funding round with Amazon, NVIDIA, and SoftBank at a $730 billion valuation, securing gigawatts of compute capacity across Amazon Trainium and NVIDIA Vera Rubin systems.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">GPT-5.5 Released</span><span class="tag blue">$730B Valuation</span><span class="tag orange">$110B Funding</span></div>
+        <a class="read-link" href="https://www.buildfastwithai.com/blogs/ai-news-today-june-5-2026" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card openai">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#10a37f;color:#fff">O</div>
+        <div><div class="vendor-name">OpenAI</div><div class="vendor-category">GPT Models</div></div>
+      </div>
+      <div class="card-title">OpenAI Files Confidential IPO — $850B+ Valuation, September Target, Goldman Leads </div>
+      <div class="card-body">OpenAI confirmed June 8 it has confidentially filed an S-1 with the SEC, targeting a September 2026 IPO debut at a valuation of $850B–$1T+, with Goldman Sachs, Morgan Stanley, and JPMorgan leading the offering. This follows Anthropic's $965B filing and means both dominant AI labs will go public within months of each other — a defining moment for the AI industry. OpenAI's revenue run rate supports the valuation: the company also recently launched three real-time audio models (conversational, translation, transcription), a self-serve ChatGPT Ads Manager, and a new $8/month "Go" tier that closes the gap between the free and $20/month Plus plans. NVIDIA's $30B investment remains the largest single private AI check ever written.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">IPO Filed June 8</span><span class="tag orange">$850B+ Valuation</span></div>
+        <a class="read-link" href="https://www.bloomberg.com/news/articles/2026-06-08/openai-filed-confidentially-for-ipo-as-rivals-race-to-market" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card google">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#4285f4;color:#fff">G</div>
+        <div><div class="vendor-name">Google / DeepMind</div><div class="vendor-category">Gemini & Cloud AI</div></div>
+      </div>
+      <div class="card-title">Google I/O 2026: Gemini 3.5 Flash GA, Gemini Omni Launched — Alphabet Raises $80B for AI Infra <span class="new-badge" data-added="2026-06-22">New</span></div>
+      <div class="card-body">At Google I/O 2026 (May 20), Google launched Gemini 3.5 Flash — now generally available via Gemini API and AI Studio — which outperforms Gemini 3.1 Pro on coding benchmarks at 4× the speed. Gemini Omni adds native video creation and multimodal editing. Alphabet announced plans to raise $80 billion for AI infrastructure — one of the largest capital raises in tech history, signaling a decisive bet on AI compute dominance. Google also launched Managed Agents in the Gemini API and a new $100/month AI Ultra plan. Despite the launches, CEO Sundar Pichai made a rare public admission: "When it comes to agentic coding, I think we are a bit behind at this moment" — as Claude Code ($2.5B ARR) and Microsoft's MAI-Code-1-Flash surge ahead. Note: Gemini 2.0 Flash was deprecated June 1, 2026.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">Gemini 3.5 Flash GA</span><span class="tag red">Coding Gap Admitted</span><span class="tag blue">IO 2026</span></div>
+        <a class="read-link" href="https://blog.google/innovation-and-ai/technology/ai/google-io-2026-all-our-announcements/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card microsoft">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#00a4ef;color:#fff">M</div>
+        <div><div class="vendor-name">Microsoft</div><div class="vendor-category">Azure AI + Copilot</div></div>
+      </div>
+      <div class="card-title">Microsoft Launches MAI-Thinking-1 + MAI-Code-1-Flash at Build 2026 — First Fully In-House Frontier Models </div>
+      <div class="card-body">At Build 2026 (June 2), Microsoft unveiled MAI-Thinking-1 (35B active params, 256K context, trained on clean licensed data without distillation) and MAI-Code-1-Flash, its inaugural code-generation model. These mark Microsoft's first fully in-house frontier models, reducing reliance on OpenAI while competing directly on reasoning and coding tasks.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">Build 2026</span><span class="tag green">Own AI Models</span></div>
+        <a class="read-link" href="https://www.cnbc.com/2026/06/02/microsoft-unveils-new-ai-models-lessen-reliance-on-openai-lower-costs.html" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card microsoft">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#00a4ef;color:#fff">M</div>
+        <div><div class="vendor-name">Microsoft</div><div class="vendor-category">AI Investments</div></div>
+      </div>
+      <div class="card-title">NVIDIA RTX Spark Superchip Launched — Runs 120B-Param Models Locally </div>
+      <div class="card-body">NVIDIA launched the RTX Spark Superchip combining CPU+GPU with up to 128GB unified memory — capable of running models up to 120B parameters entirely on a single local device. With $358B projected revenue for FY2027 (up from $215B in FY2026), Jensen Huang called these NVIDIA's "last major AI investments" in frontier model labs, signaling a pivot to infrastructure dominance.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag green">RTX Spark</span><span class="tag blue">128GB Unified Memory</span></div>
+        <a class="read-link" href="https://tech-insider.org/nvidia-openai-anthropic-investment-pullback-2026/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card meta">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#0866ff;color:#fff">M</div>
+        <div><div class="vendor-name">Meta</div><div class="vendor-category">AI Chips & Llama</div></div>
+      </div>
+      <div class="card-title">Meta Announces New AI Chips — Reducing Reliance on NVIDIA for AI Infrastructure</div>
+      <div class="card-body">Meta announced new proprietary AI chips today (June 4, 2026), the latest major tech company to reduce dependency on NVIDIA's H100/H200 GPUs for training and inference workloads. The move follows similar announcements from Google (TPU v6), Amazon (Trainium 2), and Microsoft (Maia 2) — signaling that the hyperscaler silicon race has expanded to include Meta's massive internal AI workloads. Meta's chip strategy is tightly coupled to Llama 4, its flagship open-weight model family, and the company's ambition to run AI at scale across its 3.3 billion daily active users. The announcement sent NVIDIA's stock lower in early trading, though analysts see the long-term impact as limited given NVIDIA's infrastructure moat.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag blue">New AI Chips</span><span class="tag orange">NVIDIA Competition</span><span class="tag green">Llama 4</span></div>
+        <a class="read-link" href="https://finance.yahoo.com/news/live/tech-stocks-today-anthropic-says-pentagon-ban-could-cost-it-billions-meta-announces-new-ai-chips-134456659.html" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 6: GOVERNMENT & SOCIETY
+══════════════════════════════════════════════ -->
+<div id="tab-concerns" class="section">
+  <div class="section-header">
+    <div class="section-title">⚠️ Government, Industry & Society AI Concerns <span class="section-pill">Jobs · Regulation · Risk</span></div>
+    <div class="updated-at">Updated: June 22, 2026</div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f78166">55K</div>
+      <div class="stat-label">Job cuts directly attributed to AI in 2025</div>
+      <div class="stat-change down">↑ Rising in 2026</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#ffa657">26</div>
+      <div class="stat-label">US States with enacted AI legislation (2026)</div>
+      <div class="stat-change up">↑ vs 12 in 2024</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#f78166">32K</div>
+      <div class="stat-label">Tech job losses in first 2 months of 2026</div>
+      <div class="stat-change down">↓ AI-driven</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:#d2a8ff">2027</div>
+      <div class="stat-label">Year global jobs market could collapse (Fortune/Harris)</div>
+      <div class="stat-change down">⚠ If unchecked</div>
+    </div>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card jobs">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#f78166;color:#fff">💼</div>
+        <div><div class="vendor-name">Washington Post</div><div class="vendor-category">AI Job Impact Analysis</div></div>
+      </div>
+      <div class="card-title">AI Job Losses: Which Workers Are Most Vulnerable in 2026</div>
+      <div class="card-body">The Washington Post's interactive 2026 analysis maps which workers and roles face the highest AI displacement risk. Customer service representatives, data entry workers, junior software developers, content writers, and paralegal staff top the vulnerability list. In the first two months of 2026 alone, 32,000 technology sector job losses were recorded — with employers explicitly citing AI-driven efficiency as the reason. The data shows a clear pattern: early-career, task-routine roles are disappearing first, while judgment-intensive and client-facing senior roles are holding steady or growing — creating a hollowing-out of career ladder rungs that traditional workforce development programs weren't designed for.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">32K Job Losses</span><span class="tag orange">Early Career Risk</span></div>
+        <a class="read-link" href="https://www.washingtonpost.com/technology/interactive/2026/jobs-most-affected-ai-automation/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card gov">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#6e40c9;color:#fff">🏛</div>
+        <div><div class="vendor-name">US Senate</div><div class="vendor-category">Federal AI Legislation</div></div>
+      </div>
+      <div class="card-title">AI-Related Job Impacts Clarity Act: Senators Push Mandatory Disclosure</div>
+      <div class="card-body">Senators Mark Warner and Josh Hawley introduced the AI-Related Job Impacts Clarity Act — a bipartisan bill requiring companies and federal agencies to disclose the number of layoffs directly attributable to AI. The bill addresses a fundamental accountability gap: currently, companies can attribute AI-driven layoffs to vague "restructuring" without specifying AI's role. The legislation faces opposition from the tech industry but has significant public support, as polling shows 72% of Americans want AI-driven job losses to be reported publicly. Meanwhile, Trump's executive order preempting state AI regulation has been challenged by 26 states that have enacted their own AI legislation, setting up a significant federal-state conflict in 2026.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag purple">Bipartisan Bill</span><span class="tag blue">Disclosure</span></div>
+        <a class="read-link" href="https://www.epi.org/publication/federal-ai-legislation/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card concern">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#d29922;color:#fff">⚡</div>
+        <div><div class="vendor-name">Fortune / Tristan Harris</div><div class="vendor-category">Existential Risk Warning</div></div>
+      </div>
+      <div class="card-title">"Global Jobs Collapse by 2027" — Former Google Ethicist Issues Stark Warning</div>
+      <div class="card-body">Former Google ethicist and Center for Humane Technology co-founder Tristan Harris warned in a February 2026 Fortune piece that unchecked AI advancement could trigger a global jobs market collapse by 2027 — not through gradual automation but through sudden, cascading displacement as agentic AI begins replacing entire job categories simultaneously rather than incrementally. Harris specifically calls out the "AI velocity trap" — the gap between how fast AI capabilities are advancing and how slowly workforce, education, and social safety net systems can adapt. He calls for a mandatory "AI deployment impact assessment" similar to environmental impact statements before large-scale workforce-affecting AI is deployed.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">2027 Warning</span><span class="tag orange">Agentic Risk</span></div>
+        <a class="read-link" href="https://fortune.com/2026/02/10/ai-taking-jobs-report-tristan-harris-google-ethicist-agi-technology/" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card gov">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#6e40c9;color:#fff">🏛</div>
+        <div><div class="vendor-name">California</div><div class="vendor-category">State AI Executive Order</div></div>
+      </div>
+      <div class="card-title">Bloomberg: Congress Eyes AI Worker Displacement Plans</div>
+      <div class="card-body">Bloomberg (June 17, 2026) published guide to proposals helping AI-displaced workers. Senator Sanders called AI 'one of the most challenging issues facing this country.' Congress in fact-finding mode.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag purple">State Policy</span><span class="tag blue">Workforce</span></div>
+        <a class="read-link" href="https://www.bloomberg.com/news/articles/2026-06-17/ai-job-losses-a-guide-to-the-proposals-for-helping-workers" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card concern">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#d29922;color:#fff">⚖️</div>
+        <div><div class="vendor-name">Colorado</div><div class="vendor-category">AI Act Rewrite — June 2026</div></div>
+      </div>
+      <div class="card-title">Colorado Rewrites AI Law — Original June 30 Deadline Replaced, Now Jan 1, 2027 </div>
+      <div class="card-body">Governor Polis signed SB 26-189 on May 14, 2026, replacing Colorado's original AI Act with a streamlined transparency and disclosure framework. The new law removes duty-of-care and formal risk-management requirements, instead focusing on disclosure obligations for automated decision-making. Effective date moves from June 30, 2026 to January 1, 2027.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">Effective Jan 1 2027</span><span class="tag orange">Disclosure Framework</span><span class="tag purple">SB 26-189</span></div>
+        <a class="read-link" href="https://www.littler.com/news-analysis/asap/colorado-amends-its-artificial-intelligence-law-substantially-reducing" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+
+    <div class="card stanford">
+      <div class="card-vendor">
+        <div class="vendor-logo" style="background:#8c1515;color:#fff">S</div>
+        <div><div class="vendor-name">Stanford HAI</div><div class="vendor-category">Workforce Impact 2026</div></div>
+      </div>
+      <div class="card-title">AI Skills in 2.5% of US Job Postings — Entry-Level Software Dev Employment Fell 20% </div>
+      <div class="card-body">AI skills explicitly requested in 2.5% of all US job postings — up 297% in a decade. Employment for software developers ages 22–25 fell ~20% from 2024, the first white-collar job category to show measurable contraction attributable to AI. AI talent relocating to the US dropped 89% since 2017, with an 80% decline in just the last year alone.</div>
+      <div class="card-footer">
+        <div class="tags"><span class="tag red">Dev Employment -20%</span><span class="tag orange">AI Talent -89%</span><span class="tag blue">Skills +297%</span></div>
+        <a class="read-link" href="https://hai.stanford.edu/ai-index/2026-ai-index-report/economy" target="_blank">Read More ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SECTION 7: AI TOOLS
+══════════════════════════════════════════════ -->
+<div id="tab-tools" class="section">
+  <div class="section-header">
+    <div class="section-title">🛠️ AI Tools Tracker <span class="section-pill">Launches · Pricing · Open Source</span></div>
+    <div class="updated-at">Updated: June 22, 2026</div>
+  </div>
+
+  <div class="vendor-group-label">Google AI Suite</div>
+  <div class="tools-grid">
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Gemini 3.5 Flash <span class="new-sup">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free / $0.075 per 1M tokens</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Google's fastest frontier model — combines flagship-level intelligence with Flash-series speed. Outperforms Gemini 3.1 Pro on coding and agentic benchmarks at 4× speed. Now the default model in Google's AI Mode globally. Available via Gemini API and AI Studio.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Gemini Omni <span class="new-sup">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">AI Pro / Ultra plan</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Google's multimodal model that creates anything from any input — starts with video. Major leap in world understanding, video editing, and cross-modal creation. Announced at Google I/O 2026 (May 20). Targeted at creative and advanced content workflows.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Gemini Managed Agents API <span class="new-sup">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">API usage-based</span>
+        <span class="tool-status blue">Preview</span>
+      </div>
+      <div class="tool-desc">Single API call provisions a remote Linux environment where an AI agent can reason, plan, call tools, execute code, manage files, and browse the web. Enables long-horizon autonomous tasks without managing infrastructure. Launched at Google I/O 2026.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Google AI Ultra Plan <span class="new-sup">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">$100/month</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">New developer and power-user tier — 5× higher usage limits than AI Pro, 20TB cloud storage, priority access to Gemini 3.5 Flash and Gemini Omni. Note: Google cut entry-level AI subscription from $7.99 to $4.99/month as of June 2026.</div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">Microsoft AI Suite</div>
+  <div class="tools-grid">
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">MAI-Code-1-Flash <span class="new-sup">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Azure AI pricing</span>
+        <span class="tool-status blue">Preview</span>
+      </div>
+      <div class="tool-desc">Microsoft's first proprietary coding model — converts natural-language descriptions into full application code. Announced at Build 2026 (June 2). Directly competes with Claude Code and GitHub Copilot. Signals Microsoft's shift to a multi-vendor, in-house AI model strategy.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Work IQ APIs <span class="new-sup">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Microsoft 365 / Azure</span>
+        <span class="tool-status orange">GA June 16</span>
+      </div>
+      <div class="tool-desc">Generally available June 16, 2026. New developer APIs for building AI agents that interact with Microsoft 365 data — emails, calendar, Teams messages, files. Enables contextual workplace AI applications beyond the Copilot product layer. Key for ISVs and enterprise builders.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Microsoft 365 Copilot</span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">$30/user/month</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Now active at 85%+ of Fortune 500 companies. Embedded across Word, Excel, PowerPoint, Teams, Outlook. ⚠️ Price increase July 1, 2026 — lock in current rate by June 30. Q2 2026 updates include Copilot Pages, autonomous email drafting, and meeting summarization with action items pushed to Tasks.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">GitHub Copilot <span class="new-sup" data-added="2026-06-19">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free / $10–$19/mo · AI Credits ($0.01/credit)</span>
+        <span class="tool-status orange">Pricing Change</span>
+      </div>
+      <div class="tool-desc">Dominant AI coding assistant with 2M+ paid subscribers. ⚠️ Pricing change June 1: moved to usage-based AI Credits billing — flat all-you-can-eat seats are gone. Heavy users report 10–50x cost increases for premium model usage. 2026 updates: multi-file editing, autonomous PR creation, Copilot Workspace for end-to-end task completion.</div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">AI Coding & Development</div>
+  <div class="tools-grid">
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Claude Code (Anthropic)</span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Anthropic API / $20/mo</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Fastest-growing AI coding tool — $2.5B ARR as of June 2026. Terminal-native agentic coding that handles full repositories autonomously. Benchmark leader on complex multi-step coding tasks. Now integrated into major IDEs and CI/CD pipelines across enterprise deployments.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Cursor</span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Standard $40/mo (or $32/yr) · Premium $120/mo (or $96/yr)</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">AI-native IDE built on VS Code. 2026 has cemented Cursor as the go-to environment for individual AI-augmented developers. Multi-file context, autonomous refactoring, and natural-language-to-code make it the editor of choice for developers who use Claude Code or Copilot as backend.</div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">AI Assistants & Chat</div>
+  <div class="tools-grid">
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">xAI Grok Imagine Video 1.5 <span class="new-sup" data-added="2026-06-22">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">$0.14/sec at 720p (API) · Free/Pro via grok.com</span>
+        <span class="tool-status green">GA June 16</span>
+      </div>
+      <div class="tool-desc">Image-to-Video generation — tops the Image-to-Video Arena leaderboard. GA June 16, 2026 across API, grok.com, iOS and Android. Priced 86% below Sora 2 Pro ($0.14 vs $0.50 per second). Processes reference images into high-quality video at a fraction of the cost of competing services.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Claude (Anthropic)</span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free / $20–$200/month</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Claude Opus 4.7 remains the top-rated model for complex reasoning, long-context analysis, and enterprise compliance tasks. Claude's 200K-token context window and strong safety record make it the default choice for regulated industries (healthcare, finance, legal). Anthropic IPO filing (June 1) at $965B validates enterprise demand.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">ChatGPT / GPT-5.5</span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free · Go $6/mo · Plus $20/mo · Pro $120/mo (was $200)</span>
+        <span class="tool-status orange">Price Cut</span>
+      </div>
+      <div class="tool-desc">GPT-5.5 launched with major gains in agentic coding, computer use, and scientific research. ⚡ June 2026 price cut: Pro plan dropped from $200 to $120/month; new $6/month "Go" tier added. ChatGPT "Dreaming" memory architecture (June 4) keeps context fresher across long sessions. Custom GPTs ecosystem exceeds 5M published.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">OpenAI DeployCo <span class="new-sup" data-added="2026-06-20">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Enterprise (from $4B investment)</span>
+        <span class="tool-status blue">Launched</span>
+      </div>
+      <div class="tool-desc">OpenAI launched "OpenAI Deployment Co" (DeployCo) with $4B+ in investment — a new business unit focused on deploying AI at enterprise and government scale. Signals OpenAI's shift from pure model lab to full-stack deployment partner, directly competing with Accenture, Deloitte, and system integrators for large enterprise AI transformation engagements.</div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">Free & Open-Source LLMs</div>
+  <div class="tools-grid">
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">MiniMax M3 <span class="new-sup" data-added="2026-06-19">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free (open weight)</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Released June 1 by Shanghai-based MiniMax. First open-weight model combining frontier coding (SWE-Bench Pro: 59.0% — tops open-weight ranking), 1M-token context, and native multimodality (text, image, video). Novel sparse attention architecture processes input 9× faster at 1/20th the compute. Weights and technical report available on Hugging Face.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Llama 4 Scout (Meta) <span class="new-sup" data-added="2026-06-21">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free (open weight)</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">10M token context window — feed entire codebases or 20 hours of transcripts in one prompt. Meta's flagship open-weight model, most downloaded on Hugging Face 2026. Enables on-premise deployments for data-sovereign enterprises.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Google Imagen 3 Nano + Pro <span class="new-sup" data-added="2026-06-21">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Google AI Pro / API</span>
+        <span class="tool-status green">GA June 2026</span>
+      </div>
+      <div class="tool-desc">Uses video files as prompts to create context-aware images, thumbnails, and infographics. Available June 2026 — a breakthrough in video-grounded image generation for marketing, social, and content teams.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">DeepSeek V4-Pro</span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free (open weight)</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Latest from Hangzhou-based DeepSeek. Leads LiveCodeBench and 1M-context retrieval tasks among open-weight models. MoE (Mixture of Experts) architecture makes it remarkably efficient to run locally. Significant geopolitical discussion around Chinese open-source models dominating global rankings in 2026.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">GLM-5.2 (Z.AI) <span class="new-sup" data-added="2026-06-20">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free (MIT License)</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">MIT licensed, 1M context, agentic engineering focus. Beats GPT-5.5 on SWE-Bench Pro and Terminal-Bench 2.1. Commercial-friendly. By Z.AI, released June 2026.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Qwen 3 235B-A22B (Alibaba) <span class="new-sup" data-added="2026-06-21">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free (Apache 2.0)</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Leads the broadest range of benchmarks of any open-source model — reasoning, coding, multilingual. Top open-source model as of June 2026. 235B total / 22B active MoE architecture from Alibaba.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">NVIDIA Nemotron 3 Ultra <span class="new-sup" data-added="2026-06-19">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free (open weight, OpenMDW-1.1)</span>
+        <span class="tool-status green">Released June 4</span>
+      </div>
+      <div class="tool-desc">550B total / 55B active MoE model — America's most capable open-weight LLM of 2026. Announced at Computex 2026 (June 1), released June 4 via Hugging Face, ModelScope, and OpenRouter. Hybrid Mamba-Attention architecture delivers 140 tokens/sec, 5× faster inference than comparable open models. Scores 48 on AI Analysis Intelligence Index (9th of 89 globally). Available as NVIDIA NIM Microservice for enterprise deployment at 30% lower cost than comparable open frontier models.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Gemma 4 12B (Google)</span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free (Apache 2.0)</span>
+        <span class="tool-status green">Released June 3</span>
+      </div>
+      <div class="tool-desc">Google's smallest multimodal open-weight flagship — 11.95B parameters that run entirely on a standard 16GB enterprise laptop. Scores 77.2% on MMLU Pro (beats last year's Gemma 3 27B), supports 128K context, natively analyzes images, audio, and video without encoders. Available on Hugging Face and Kaggle; integrates with vLLM, SGLang, MLX, and llama.cpp. Ideal for privacy-first enterprise deployments where data cannot leave the device.</div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">Productivity & Workplace AI</div>
+  <div class="tools-grid">
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">ZoomMate <span class="new-sup" data-added="2026-06-19">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">$20/user/month</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Launched June 1, 2026. AI assistant embedded directly in live Zoom meetings — connects decisions made during calls with Salesforce, Jira, ServiceNow, and Slack in real time. Captures action items, creates tickets, and updates CRM records autonomously during the meeting. Eliminates post-call note entry for sales, customer success, and support teams. First major AI product to bridge live meeting context with enterprise workflow tools seamlessly.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">OpenAI Real-Time Audio Models <span class="new-sup">NEW</span></span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">OpenAI API usage-based</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Three specialized real-time audio models launched June 2026: one for conversational agents (low-latency two-way dialogue), one for simultaneous translation (real-time language switching with tone preservation), and one for transcription. Enables voice-native AI products with sub-200ms latency — making phone-based AI agents competitive with human agents on responsiveness for the first time. Key infrastructure for CCaaS vendors building next-gen voice AI.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Itential FlowAI (FlowAgents) <span class="new-sup" data-added="2026-06-20">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Enterprise pricing</span>
+        <span class="tool-status green">GA June 1</span>
+      </div>
+      <div class="tool-desc">IT infrastructure AI agents (FlowAgents) for live production networks. Launched June 1, 2026 — enables autonomous AI-driven network operations, configuration, and remediation across hybrid IT environments. Targets NetOps teams managing complex multi-vendor network infrastructure at scale.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Zuora AI Monetization Suite <span class="new-sup" data-added="2026-06-20">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Enterprise subscription</span>
+        <span class="tool-status green">GA June 4</span>
+      </div>
+      <div class="tool-desc">Launched June 4, 2026. Includes AI Pricing Simulator plus tooling for pricing, billing, and revenue recognition. Helps subscription businesses model the financial impact of AI-driven pricing changes before deploying them, reducing revenue leakage risk as companies shift to usage-based or AI-augmented pricing models.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">OpenAI ChatGPT "Dreaming" <span class="new-sup" data-added="2026-06-21">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free / $20–$200/month</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">New memory architecture published June 4 — keeps memories fresher, reduces stale and contradictory context across long sessions. Significant improvement for users who rely on persistent memory for ongoing projects and workflows.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">NVIDIA Nemotron 3.5 Content Safety <span class="new-sup" data-added="2026-06-21">NEW</span></span>
+        <span class="tool-pop">🌱</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free (HuggingFace)</span>
+        <span class="tool-status green">Released</span>
+      </div>
+      <div class="tool-desc">Small LM for content-safety moderation covering prompts, images, and responses with custom policy mode. Available on HuggingFace — enterprise-grade guardrails at low compute cost for teams deploying AI at scale.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Microsoft MAI-Code-1-Flash <span class="new-sup" data-added="2026-06-21">NEW</span></span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Azure AI pricing</span>
+        <span class="tool-status blue">Preview</span>
+      </div>
+      <div class="tool-desc">Code-generation model from Microsoft Build 2026, competing with GitHub Copilot and Claude Code. Microsoft's first fully in-house frontier coding model — signals a multi-vendor AI strategy reducing OpenAI dependency.</div>
+    </div>
+  </div>
+
+  <div class="vendor-group-label">LLM Runners & Local AI</div>
+  <div class="tools-grid">
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Ollama</span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free / Open Source</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">The dominant local LLM runner for macOS, Linux, and Windows. v0.24.0: Codex App support, Gemma 4 MTP speculative decoding, reworked MLX sampler. One-command download for Llama 4, DeepSeek, Qwen 3, MiniMax M3, and 100+ models. OpenAI-compatible local API. 8M+ downloads.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">LM Studio</span>
+        <span class="tool-pop">🔥</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Desktop GUI for discovering, downloading, and running local LLMs. v0.4.16 on Mac Apple Silicon. Stable MTP support shipped. Supports Qwen 3.6, Gemma 4, DeepSeek, GPT-oss. llama.cpp: Qwen 3.6 MTP support, Windows CUDA 13.1 prebuilts at build b9196. Hugging Face model browser built-in with automatic hardware optimization.</div>
+    </div>
+
+    <div class="tool-item">
+      <div class="tool-header">
+        <span class="tool-name">Jan.ai</span>
+        <span class="tool-pop">⭐</span>
+      </div>
+      <div class="tool-meta">
+        <span class="tool-price">Free / Open Source</span>
+        <span class="tool-status green">GA</span>
+      </div>
+      <div class="tool-desc">Open-source offline ChatGPT alternative that runs entirely locally. Popular in privacy-focused enterprise and government contexts where no data can leave the device. Supports GGUF models and integrates with local document collections via built-in RAG. Growing adoption in EU orgs under GDPR AI compliance requirements.</div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+  // Date display
+  const now = new Date();
+  document.getElementById('dateDisplay').textContent = now.toLocaleDateString('en-US', {
+    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
+  });
+
+  // Tab switching
+  function showTab(id, el) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    if (el) el.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
