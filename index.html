@@ -1631,7 +1631,7 @@ footer strong { color: #e6edf3; }
 
   /* ── Call Gemini API ── */
   async function fetchFresh(key) {
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
     const prompt = `Today is ${TODAY_LG}. Use Google Search to find the very latest AI news (past 48 hours) and return ONLY a raw JSON object — no markdown, no code fences, no explanation. Exact structure:
 
 {
@@ -1662,7 +1662,7 @@ Use only real URLs that exist. Every title must include specific numbers or name
 
     const resp = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         tools: [{ googleSearch: {} }],
@@ -1729,9 +1729,14 @@ Use only real URLs that exist. Every title must include specific numbers or name
       const errTime = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
       if (bar) bar.innerHTML =
         `⚠️ Live refresh failed · Showing last saved content · <strong>${TODAY_LG} at ${errTime}</strong>
-         &nbsp;·&nbsp; <a href="#" id="retryRefresh" style="color:var(--accent)">Retry</a>`;
-      const rr = document.getElementById('retryRefresh');
-      if (rr) rr.addEventListener('click', e => { e.preventDefault(); localStorage.removeItem(CACHE_KEY); location.reload(); });
+         &nbsp;·&nbsp; <a href="#" id="retryRefresh" style="color:var(--accent)">Retry</a>
+         &nbsp;·&nbsp; <a href="#" id="resetKey" style="color:var(--accent)">Change API key</a>`;
+      document.getElementById('retryRefresh')?.addEventListener('click', e => {
+        e.preventDefault(); localStorage.removeItem(CACHE_KEY); location.reload();
+      });
+      document.getElementById('resetKey')?.addEventListener('click', e => {
+        e.preventDefault(); localStorage.removeItem(CACHE_KEY); localStorage.removeItem('gemini_api_key'); location.reload();
+      });
     }
   }
 

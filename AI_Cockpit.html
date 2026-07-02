@@ -1550,7 +1550,7 @@
     if (!topic) return;
     const key = getKey();
     if (!key) { _fetched.add(tabId); return; }
-    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent`;
 
     const tabEl = document.getElementById('tab-' + tabId);
     if (!tabEl) return;
@@ -1588,7 +1588,7 @@ Return ONLY a raw JSON array of 4 news items (no markdown, no explanation):
 
       const resp = await fetch(API_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           tools: [{ googleSearch: {} }],
