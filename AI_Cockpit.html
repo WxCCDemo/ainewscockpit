@@ -1494,8 +1494,14 @@
    Each tab is fetched lazily on first activation.
    ══════════════════════════════════════════════════════════════ */
 (function () {
-  const GEMINI_KEY = 'AQ.Ab8RN6LEEW6Jut96yLGpVHDquOcXp_7P9FyATnecmhpZ3NWGOA';
-  const API_URL    = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
+  function getKey() {
+    let key = localStorage.getItem('gemini_api_key') || '';
+    if (!key) {
+      key = prompt('Enter your Gemini API key to enable live news:\n(Free key at aistudio.google.com/apikey — stored only in your browser)');
+      if (key && key.trim()) localStorage.setItem('gemini_api_key', key.trim());
+    }
+    return key ? key.trim() : '';
+  }
   const CACHE_KEY  = 'ai_cockpit_gemini_v2';
   const CACHE_TTL  = 2 * 60 * 60 * 1000;
 
@@ -1542,6 +1548,9 @@
     if (_fetched.has(tabId)) return;
     const topic = TAB_TOPICS[tabId];
     if (!topic) return;
+    const key = getKey();
+    if (!key) { _fetched.add(tabId); return; }
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
 
     const tabEl = document.getElementById('tab-' + tabId);
     if (!tabEl) return;

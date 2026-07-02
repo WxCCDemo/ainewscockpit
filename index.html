@@ -1504,7 +1504,7 @@ footer strong { color: #e6edf3; }
    Results cached in localStorage for 2 hours.
    ══════════════════════════════════════════════════════════════ */
 (function () {
-  const GEMINI_KEY = 'AQ.Ab8RN6LEEW6Jut96yLGpVHDquOcXp_7P9FyATnecmhpZ3NWGOA';
+  const GEMINI_KEY = localStorage.getItem('gemini_api_key') || '';
   const API_URL    = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`;
   const CACHE_KEY  = 'ai_news_gemini_v2';
   const CACHE_TTL  = 2 * 60 * 60 * 1000; // 2 hours
@@ -1630,7 +1630,8 @@ footer strong { color: #e6edf3; }
   }
 
   /* ── Call Gemini API ── */
-  async function fetchFresh() {
+  async function fetchFresh(key) {
+    const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
     const prompt = `Today is ${TODAY_LG}. Use Google Search to find the very latest AI news (past 48 hours) and return ONLY a raw JSON object — no markdown, no code fences, no explanation. Exact structure:
 
 {
@@ -1696,7 +1697,14 @@ Use only real URLs that exist. Every title must include specific numbers or name
 
   /* ── Main entry point ── */
   async function init() {
-    stampDates(); // always update dates first, regardless of cache/API outcome
+    stampDates();
+    const key = getKey();
+    if (!key) {
+      const bar = document.querySelector('.updated-bar');
+      if (bar) bar.innerHTML = `⚠️ No API key set · <a href="#" id="setKey" style="color:var(--accent)">Enter Gemini API key</a> to enable live refresh`;
+      document.getElementById('setKey')?.addEventListener('click', e => { e.preventDefault(); localStorage.removeItem('gemini_api_key'); location.reload(); });
+      return;
+    }
     const bar = document.querySelector('.updated-bar');
 
     // Try localStorage cache first
@@ -1712,7 +1720,7 @@ Use only real URLs that exist. Every title must include specific numbers or name
     if (bar) bar.innerHTML = '⏳ Fetching latest AI news via Gemini + Google Search…';
 
     try {
-      const data = await fetchFresh();
+      const data = await fetchFresh(key);
       // Cache result
       try { localStorage.setItem(CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch (_) {}
       applyData(data);
@@ -1725,6 +1733,15 @@ Use only real URLs that exist. Every title must include specific numbers or name
       const rr = document.getElementById('retryRefresh');
       if (rr) rr.addEventListener('click', e => { e.preventDefault(); localStorage.removeItem(CACHE_KEY); location.reload(); });
     }
+  }
+
+  function getKey() {
+    let key = localStorage.getItem('gemini_api_key') || '';
+    if (!key) {
+      key = prompt('Enter your Gemini API key to enable live news refresh:\n(Get a free key at aistudio.google.com/apikey — stored only in your browser)');
+      if (key && key.trim()) localStorage.setItem('gemini_api_key', key.trim());
+    }
+    return key ? key.trim() : '';
   }
 
   document.addEventListener('DOMContentLoaded', init);
