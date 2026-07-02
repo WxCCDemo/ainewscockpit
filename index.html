@@ -1670,6 +1670,8 @@ Use only real URLs that exist. Every title must include specific numbers or name
       })
     });
 
+    if (resp.status === 429) throw new Error('RATE_LIMITED');
+    if (resp.status === 401) throw new Error('INVALID_KEY');
     if (!resp.ok) throw new Error(`Gemini API error ${resp.status}`);
     const json = await resp.json();
     const text = (json.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('');
@@ -1727,8 +1729,13 @@ Use only real URLs that exist. Every title must include specific numbers or name
     } catch (err) {
       console.error('Gemini live refresh failed:', err);
       const errTime = new Date().toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+      const msg = err.message === 'RATE_LIMITED'
+        ? `⏱️ Rate limit hit · Wait 1 minute then click Retry · <strong>${TODAY_LG} at ${errTime}</strong>`
+        : err.message === 'INVALID_KEY'
+        ? `🔑 Invalid API key · <strong>${TODAY_LG} at ${errTime}</strong>`
+        : `⚠️ Live refresh failed · Showing last saved content · <strong>${TODAY_LG} at ${errTime}</strong>`;
       if (bar) bar.innerHTML =
-        `⚠️ Live refresh failed · Showing last saved content · <strong>${TODAY_LG} at ${errTime}</strong>
+        `${msg}
          &nbsp;·&nbsp; <a href="#" id="retryRefresh" style="color:var(--accent)">Retry</a>
          &nbsp;·&nbsp; <a href="#" id="resetKey" style="color:var(--accent)">Change API key</a>`;
       document.getElementById('retryRefresh')?.addEventListener('click', e => {
