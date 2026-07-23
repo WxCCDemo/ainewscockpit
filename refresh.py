@@ -1,12 +1,13 @@
 """
 Daily AI News Refresh Script
-Runs inside GitHub Actions — calls Claude API to search the web and rewrite
+Runs inside GitHub Actions — calls the Gemini API to search the web and rewrite
 both index.html (AI Daily News) and AI_Cockpit.html (AI Cockpit Dashboard).
 """
 import os
 import re
 from datetime import datetime
-import anthropic
+from google import genai
+from google.genai import types
 
 TODAY = datetime.utcnow().strftime("%B %d, %Y")
 TODAY_SHORT = datetime.utcnow().strftime("%Y-%m-%d")
@@ -33,7 +34,7 @@ SEARCHES = [
 REFRESH_PROMPT = """You are the autonomous engine that updates two AI intelligence dashboards.
 Today's date is {today}. Today's short date is {today_short}.
 
-STEP 1 — Use the web_search tool to run ALL of these searches:
+STEP 1 — Use Google Search to research all of these topics:
 {searches}
 
 STEP 2 — Read the current index.html file content provided below.
@@ -100,7 +101,7 @@ def main():
     print(f"  index.html: {len(index_html):,} chars")
     print(f"  AI_Cockpit.html: {len(cockpit_html):,} chars")
 
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = REFRESH_PROMPT.format(
         today=TODAY,
@@ -110,22 +111,18 @@ def main():
         cockpit_html=cockpit_html,
     )
 
-    print("Calling Claude API with web search...")
-    response = client.messages.create(
-        model="claude-opus-4-5",
-        max_tokens=16000,
-        tools=[{
-            "type": "web_search_20250305",
-            "name": "web_search",
-            "max_uses": 12,
-        }],
-        messages=[{"role": "user", "content": prompt}],
+    print("Calling Gemini API with Google Search grounding...")
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+    response = client.models.generate_content(
+        model="gemini-pro-latest",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            tools=[grounding_tool],
+            max_output_tokens=16000,
+        ),
     )
 
-    full_text = ""
-    for block in response.content:
-        if hasattr(block, "text"):
-            full_text += block.text
+    full_text = response.text or ""
 
     print(f"  Response: {len(full_text):,} chars")
 
