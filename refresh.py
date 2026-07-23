@@ -114,7 +114,7 @@ def main():
     print("Calling Gemini API with Google Search grounding...")
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
     response = client.models.generate_content(
-        model="gemini-pro-latest",
+        model="gemini-flash-latest",
         contents=prompt,
         config=types.GenerateContentConfig(
             tools=[grounding_tool],
