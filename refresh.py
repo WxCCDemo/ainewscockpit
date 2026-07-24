@@ -2,6 +2,10 @@
 Daily AI News Refresh Script
 Runs inside GitHub Actions — calls the Gemini API to search the web and rewrite
 both index.html (AI Daily News) and AI_Cockpit.html (AI Cockpit Dashboard).
+
+Each file is refreshed with its own separate Gemini call (rather than one
+combined call for both) to keep each request's input/output token size well
+within free-tier limits.
 """
 import os
 import re
@@ -31,7 +35,9 @@ SEARCHES = [
         datetime.utcnow().strftime("%B"), datetime.utcnow().year),
 ]
 
-REFRESH_PROMPT = """You are the autonomous engine that updates two AI intelligence dashboards.
+SEARCHES_TEXT = "\n".join(f"  {i+1}. {s}" for i, s in enumerate(SEARCHES))
+
+INDEX_PROMPT = """You are the autonomous engine that updates the "AI Daily News" dashboard (index.html).
 Today's date is {today}. Today's short date is {today_short}.
 
 STEP 1 — Use Google Search to research all of these topics:
@@ -57,22 +63,6 @@ STEP 3 — Output the COMPLETE updated index.html with ALL changes applied.
 Start your output with exactly: <<<INDEX_HTML_START>>>
 End with exactly: <<<INDEX_HTML_END>>>
 
-STEP 4 — Read the current AI_Cockpit.html file content provided below.
-Apply the same fresh content to all 7 tabs:
-- Tab 1 CCaaS: update all vendor cards with latest news
-- Tab 2 Consulting: update Big 4 + McKinsey reports
-- Tab 3 ROI: update stats and failure/success analysis
-- Tab 4 Academic: update Stanford, WEF, Brookings, IDC cards
-- Tab 5 AI Orgs: update Anthropic, OpenAI, Google, Microsoft, NVIDIA cards
-- Tab 6 Gov & Society: update job loss numbers, regulation deadlines
-- Tab 7 Tools: add new tools (new-sup data-added="{today_short}"), update pricing
-- Update all "Updated: [date]" strings to "{today}"
-- Add new-badge data-added="{today_short}" to all newly updated cards
-
-STEP 5 — Output the COMPLETE updated AI_Cockpit.html with ALL changes applied.
-Start your output with exactly: <<<COCKPIT_HTML_START>>>
-End with exactly: <<<COCKPIT_HTML_END>>>
-
 Rules:
 - Write specific punchy titles with real numbers and dates
 - Use real source URLs — never placeholder links
@@ -83,12 +73,69 @@ Current index.html:
 <<<CURRENT_INDEX>>>
 {index_html}
 <<<END_CURRENT_INDEX>>>
+"""
+
+COCKPIT_PROMPT = """You are the autonomous engine that updates the "AI Cockpit Dashboard" (AI_Cockpit.html).
+Today's date is {today}. Today's short date is {today_short}.
+
+STEP 1 — Use Google Search to research all of these topics:
+{searches}
+
+STEP 2 — Read the current AI_Cockpit.html file content provided below.
+Apply fresh content to all 7 tabs:
+- Tab 1 CCaaS: update all vendor cards with latest news
+- Tab 2 Consulting: update Big 4 + McKinsey reports
+- Tab 3 ROI: update stats and failure/success analysis
+- Tab 4 Academic: update Stanford, WEF, Brookings, IDC cards
+- Tab 5 AI Orgs: update Anthropic, OpenAI, Google, Microsoft, NVIDIA cards
+- Tab 6 Gov & Society: update job loss numbers, regulation deadlines
+- Tab 7 Tools: add new tools (new-sup data-added="{today_short}"), update pricing
+- Update all "Updated: [date]" strings to "{today}"
+- Add new-badge data-added="{today_short}" to all newly updated cards
+
+STEP 3 — Output the COMPLETE updated AI_Cockpit.html with ALL changes applied.
+Start your output with exactly: <<<COCKPIT_HTML_START>>>
+End with exactly: <<<COCKPIT_HTML_END>>>
+
+Rules:
+- Write specific punchy titles with real numbers and dates
+- Use real source URLs — never placeholder links
+- Preserve ALL CSS, JS, structure exactly — only change content
+- Always use today's date {today_short} in data-added attributes
 
 Current AI_Cockpit.html:
 <<<CURRENT_COCKPIT>>>
 {cockpit_html}
 <<<END_CURRENT_COCKPIT>>>
 """
+
+
+def refresh_file(client, prompt, marker_start, marker_end, max_output_tokens, label):
+    """Call Gemini once for a single file and return the extracted new content, or None."""
+    print(f"Calling Gemini API for {label} with Google Search grounding...")
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+    response = client.models.generate_content(
+        model="gemini-flash-latest",
+        contents=prompt,
+        config=types.GenerateContentConfig(
+            tools=[grounding_tool],
+            max_output_tokens=max_output_tokens,
+        ),
+    )
+    full_text = response.text or ""
+    print(f"  {label} response: {len(full_text):,} chars")
+
+    match = re.search(
+        re.escape(marker_start) + r"(.*?)" + re.escape(marker_end),
+        full_text, re.DOTALL
+    )
+    if match:
+        new_content = match.group(1).strip()
+        print(f"  ✅ {label} extracted ({len(new_content):,} chars)")
+        return new_content
+    print(f"  ⚠️  Could not extract {label} — keeping original")
+    return None
+
 
 def main():
     print(f"Starting daily refresh for {TODAY}...")
@@ -103,52 +150,33 @@ def main():
 
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-    prompt = REFRESH_PROMPT.format(
-        today=TODAY,
-        today_short=TODAY_SHORT,
-        searches="\n".join(f"  {i+1}. {s}" for i, s in enumerate(SEARCHES)),
-        index_html=index_html,
-        cockpit_html=cockpit_html,
+    # ── Refresh index.html ──
+    index_prompt = INDEX_PROMPT.format(
+        today=TODAY, today_short=TODAY_SHORT,
+        searches=SEARCHES_TEXT, index_html=index_html,
     )
-
-    print("Calling Gemini API with Google Search grounding...")
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-    response = client.models.generate_content(
-        model="gemini-flash-latest",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            tools=[grounding_tool],
-            max_output_tokens=16000,
-        ),
+    new_index = refresh_file(
+        client, index_prompt,
+        "<<<INDEX_HTML_START>>>", "<<<INDEX_HTML_END>>>",
+        max_output_tokens=20000, label="index.html",
     )
-
-    full_text = response.text or ""
-
-    print(f"  Response: {len(full_text):,} chars")
-
-    idx_match = re.search(
-        r"<<<INDEX_HTML_START>>>(.*?)<<<INDEX_HTML_END>>>",
-        full_text, re.DOTALL
-    )
-    if idx_match:
-        new_index = idx_match.group(1).strip()
+    if new_index:
         with open("index.html", "w", encoding="utf-8") as f:
             f.write(new_index)
-        print(f"  ✅ index.html updated ({len(new_index):,} chars)")
-    else:
-        print("  ⚠️  Could not extract index.html — keeping original")
 
-    ckt_match = re.search(
-        r"<<<COCKPIT_HTML_START>>>(.*?)<<<COCKPIT_HTML_END>>>",
-        full_text, re.DOTALL
+    # ── Refresh AI_Cockpit.html ──
+    cockpit_prompt = COCKPIT_PROMPT.format(
+        today=TODAY, today_short=TODAY_SHORT,
+        searches=SEARCHES_TEXT, cockpit_html=cockpit_html,
     )
-    if ckt_match:
-        new_cockpit = ckt_match.group(1).strip()
+    new_cockpit = refresh_file(
+        client, cockpit_prompt,
+        "<<<COCKPIT_HTML_START>>>", "<<<COCKPIT_HTML_END>>>",
+        max_output_tokens=32000, label="AI_Cockpit.html",
+    )
+    if new_cockpit:
         with open("AI_Cockpit.html", "w", encoding="utf-8") as f:
             f.write(new_cockpit)
-        print(f"  ✅ AI_Cockpit.html updated ({len(new_cockpit):,} chars)")
-    else:
-        print("  ⚠️  Could not extract AI_Cockpit.html — keeping original")
 
     print("Done.")
 
