@@ -159,7 +159,7 @@ def refresh_file(client, prompt, marker_start, marker_end, max_output_tokens, la
     print(f"Calling Gemini API for {label}...")
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
     response = client.models.generate_content(
-        model="gemini-2.0-flash",
+        model="gemini-3.6-flash",
         contents=prompt,
         config=types.GenerateContentConfig(
             tools=[grounding_tool],
